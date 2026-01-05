@@ -1,0 +1,15 @@
+# Invoice Analytics Dashboard - Dependencies
+
+# Core Framework
+streamlit>=1.28.0
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Visualization
+plotly>=5.17.0
+
+# Optional: For future enhancements
+# scikit-learn>=1.3.0  # For predictive analytics
+# prophet>=1.1.0       # For time series forecasting

@@ -1,0 +1,207 @@
+"""
+Data Transformer Module
+
+This module handles all data transformations and derived field calculations.
+Responsible for:
+- Creating derived fields (total_amount, full_name, invoice_year)
+- Aggregations for visualizations
+- Filtering operations
+"""
+
+import pandas as pd
+import numpy as np
+from typing import List, Optional
+
+
+class DataTransformer:
+    """
+    Handles all data transformation and aggregation operations.
+
+    This class takes raw invoice data and transforms it into
+    formats suitable for visualization and analysis.
+    """
+
+    def __init__(self, df: pd.DataFrame):
+        """
+        Initialize DataTransformer with a dataframe.
+
+        Args:
+            df (pd.DataFrame): Raw invoice data with invoice_date as datetime
+        """
+        self.df = df.copy()
+        self._add_derived_fields()
+
+    def _add_derived_fields(self) -> None:
+        """
+        Add derived fields to the dataframe.
+
+        Derived fields:
+        - full_name: Concatenation of first_name and last_name
+        - total_amount: qty * amount (total revenue per transaction)
+        - invoice_year: Year extracted from invoice_date
+        - invoice_month: Month extracted from invoice_date
+        - invoice_day: Day extracted from invoice_date
+        """
+        # Customer full name
+        self.df['full_name'] = (
+            self.df['first_name'] + ' ' + self.df['last_name']
+        )
+
+        # Total transaction amount
+        self.df['total_amount'] = self.df['qty'] * self.df['amount']
+
+        # Date components
+        self.df['invoice_year'] = self.df['invoice_date'].dt.year
+        self.df['invoice_month'] = self.df['invoice_date'].dt.month
+        self.df['invoice_day'] = self.df['invoice_date'].dt.day
+
+    def filter_by_years(self, years: List[int]) -> 'DataTransformer':
+        """
+        Filter data by selected years.
+
+        Args:
+            years (List[int]): List of years to include
+
+        Returns:
+            DataTransformer: New instance with filtered data
+        """
+        filtered_df = self.df[self.df['invoice_year'].isin(years)]
+        return DataTransformer(filtered_df)
+
+    def filter_by_products(self, product_ids: List[int]) -> 'DataTransformer':
+        """
+        Filter data by selected product IDs.
+
+        Args:
+            product_ids (List[int]): List of product IDs to include
+
+        Returns:
+            DataTransformer: New instance with filtered data
+        """
+        filtered_df = self.df[self.df['product_id'].isin(product_ids)]
+        return DataTransformer(filtered_df)
+
+    def get_kpis(self) -> dict:
+        """
+        Calculate key performance indicators.
+
+        Returns:
+            dict: Dictionary containing all KPIs
+        """
+        return {
+            'total_revenue': self.df['total_amount'].sum(),
+            'total_quantity': self.df['qty'].sum(),
+            'num_transactions': len(self.df),
+            'avg_transaction_value': self.df['total_amount'].mean(),
+            'unique_customers': self.df['email'].nunique(),
+            'unique_products': self.df['product_id'].nunique()
+        }
+
+    def get_yearly_revenue(self) -> pd.DataFrame:
+        """
+        Aggregate revenue by year.
+
+        Returns:
+            pd.DataFrame: Yearly revenue with columns [invoice_year, total_revenue]
+        """
+        yearly = self.df.groupby('invoice_year').agg({
+            'total_amount': 'sum'
+        }).reset_index()
+        yearly.columns = ['invoice_year', 'total_revenue']
+        return yearly.sort_values('invoice_year')
+
+    def get_yearly_quantity(self) -> pd.DataFrame:
+        """
+        Aggregate quantity sold by year.
+
+        Returns:
+            pd.DataFrame: Yearly quantity with columns [invoice_year, total_quantity]
+        """
+        yearly = self.df.groupby('invoice_year').agg({
+            'qty': 'sum'
+        }).reset_index()
+        yearly.columns = ['invoice_year', 'total_quantity']
+        return yearly.sort_values('invoice_year')
+
+    def get_top_products(self, n: int = 10) -> pd.DataFrame:
+        """
+        Get top N products by revenue.
+
+        Args:
+            n (int): Number of top products to return
+
+        Returns:
+            pd.DataFrame: Top products with columns [product_id, total_revenue]
+        """
+        top_products = self.df.groupby('product_id').agg({
+            'total_amount': 'sum'
+        }).reset_index()
+        top_products.columns = ['product_id', 'total_revenue']
+        return top_products.nlargest(n, 'total_revenue')
+
+    def get_product_year_heatmap_data(self) -> pd.DataFrame:
+        """
+        Get product-year revenue data for heatmap visualization.
+
+        Returns:
+            pd.DataFrame: Pivot table with years as index, products as columns
+        """
+        heatmap_data = self.df.pivot_table(
+            index='invoice_year',
+            columns='product_id',
+            values='total_amount',
+            aggfunc='sum',
+            fill_value=0
+        )
+        return heatmap_data
+
+    def get_daily_transactions(self) -> pd.DataFrame:
+        """
+        Get daily transaction counts.
+
+        Returns:
+            pd.DataFrame: Daily transactions with columns [invoice_date, num_transactions]
+        """
+        daily = self.df.groupby('invoice_date').agg({
+            'product_id': 'count'
+        }).reset_index()
+        daily.columns = ['invoice_date', 'num_transactions']
+        return daily.sort_values('invoice_date')
+
+    def get_product_performance(self, product_id: int) -> pd.DataFrame:
+        """
+        Get yearly performance for a specific product.
+
+        Args:
+            product_id (int): Product ID to analyze
+
+        Returns:
+            pd.DataFrame: Product performance by year
+        """
+        product_data = self.df[self.df['product_id'] == product_id]
+
+        performance = product_data.groupby('invoice_year').agg({
+            'total_amount': 'sum',
+            'qty': 'sum'
+        }).reset_index()
+
+        performance.columns = ['invoice_year', 'revenue', 'quantity']
+        return performance.sort_values('invoice_year')
+
+    def get_available_years(self) -> List[int]:
+        """
+        Get list of all available years in the dataset.
+
+        Returns:
+            List[int]: Sorted list of years
+        """
+        return sorted(self.df['invoice_year'].unique().tolist())
+
+    def get_available_products(self) -> List[int]:
+        """
+        Get list of all available product IDs in the dataset.
+
+        Returns:
+            List[int]: Sorted list of product IDs
+        """
+        return sorted(self.df['product_id'].unique().tolist())
