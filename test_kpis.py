@@ -21,6 +21,10 @@ from src.utils.kpis import (
     calculate_all_kpis,
     calculate_unique_customers,
     calculate_unique_products,
+    calculate_kpis_for_year,
+    calculate_percentage_change,
+    calculate_kpis_with_yoy_comparison,
+    get_available_years,
     KPIError
 )
 
@@ -363,6 +367,261 @@ def test_kpis_with_real_data():
         return False
 
 
+def create_multi_year_sample_data() -> pd.DataFrame:
+    """Create sample invoice data with multiple years for YoY testing."""
+    # 2020 data: 3 transactions
+    data_2020 = {
+        'product_id': [100, 101, 102],
+        'qty': [2, 3, 1],
+        'amount': [10.0, 20.0, 30.0],
+        'email': ['a@test.com', 'b@test.com', 'c@test.com'],
+        'invoice_date': pd.date_range('2020-01-01', periods=3, freq='D')
+    }
+
+    # 2021 data: 4 transactions (growth scenario)
+    data_2021 = {
+        'product_id': [100, 101, 102, 100],
+        'qty': [3, 4, 2, 1],
+        'amount': [10.0, 20.0, 30.0, 10.0],
+        'email': ['a@test.com', 'b@test.com', 'c@test.com', 'd@test.com'],
+        'invoice_date': pd.date_range('2021-01-01', periods=4, freq='D')
+    }
+
+    # 2022 data: 2 transactions (decline scenario)
+    data_2022 = {
+        'product_id': [100, 101],
+        'qty': [1, 2],
+        'amount': [10.0, 20.0],
+        'email': ['a@test.com', 'b@test.com'],
+        'invoice_date': pd.date_range('2022-01-01', periods=2, freq='D')
+    }
+
+    df_2020 = pd.DataFrame(data_2020)
+    df_2021 = pd.DataFrame(data_2021)
+    df_2022 = pd.DataFrame(data_2022)
+
+    df = pd.concat([df_2020, df_2021, df_2022], ignore_index=True)
+    df['total_amount'] = df['qty'] * df['amount']
+    df['invoice_year'] = df['invoice_date'].dt.year
+
+    return df
+
+
+def test_get_available_years():
+    """Test getting available years from data."""
+    print("\n" + "="*70)
+    print("TEST 13: Get Available Years")
+    print("="*70)
+
+    try:
+        df = create_multi_year_sample_data()
+
+        years = get_available_years(df)
+        expected = [2020, 2021, 2022]
+
+        assert years == expected, f"Expected {expected}, got {years}"
+
+        print(f"[PASS] Available years: {years}")
+        print(f"[PASS] Expected: {expected}")
+        return True
+
+    except Exception as e:
+        print(f"[FAIL] {str(e)}")
+        return False
+
+
+def test_calculate_kpis_for_year():
+    """Test calculating KPIs for a specific year."""
+    print("\n" + "="*70)
+    print("TEST 14: Calculate KPIs for Specific Year")
+    print("="*70)
+
+    try:
+        df = create_multi_year_sample_data()
+
+        # Test 2020 data
+        kpis_2020 = calculate_kpis_for_year(df, 2020)
+
+        # 2020: (2*10) + (3*20) + (1*30) = 20 + 60 + 30 = 110
+        assert kpis_2020['year'] == 2020
+        assert kpis_2020['total_revenue'] == 110.0
+        assert kpis_2020['total_quantity'] == 6  # 2+3+1
+        assert kpis_2020['num_transactions'] == 3
+        assert kpis_2020['unique_customers'] == 3
+
+        # Test 2021 data
+        kpis_2021 = calculate_kpis_for_year(df, 2021)
+
+        # 2021: (3*10) + (4*20) + (2*30) + (1*10) = 30 + 80 + 60 + 10 = 180
+        assert kpis_2021['year'] == 2021
+        assert kpis_2021['total_revenue'] == 180.0
+        assert kpis_2021['total_quantity'] == 10  # 3+4+2+1
+        assert kpis_2021['num_transactions'] == 4
+
+        print(f"[PASS] 2020 KPIs: Revenue=${kpis_2020['total_revenue']:,.2f}, Qty={kpis_2020['total_quantity']:,}")
+        print(f"[PASS] 2021 KPIs: Revenue=${kpis_2021['total_revenue']:,.2f}, Qty={kpis_2021['total_quantity']:,}")
+        return True
+
+    except Exception as e:
+        print(f"[FAIL] {str(e)}")
+        return False
+
+
+def test_calculate_percentage_change():
+    """Test percentage change calculation."""
+    print("\n" + "="*70)
+    print("TEST 15: Calculate Percentage Change")
+    print("="*70)
+
+    try:
+        # Test increase
+        change = calculate_percentage_change(120, 100)
+        assert change == 20.0, f"Expected 20.0%, got {change}%"
+        print(f"[PASS] 100 -> 120 = {change:+.2f}% (increase)")
+
+        # Test decrease
+        change = calculate_percentage_change(80, 100)
+        assert change == -20.0, f"Expected -20.0%, got {change}%"
+        print(f"[PASS] 100 -> 80 = {change:+.2f}% (decrease)")
+
+        # Test no change
+        change = calculate_percentage_change(100, 100)
+        assert change == 0.0, f"Expected 0.0%, got {change}%"
+        print(f"[PASS] 100 -> 100 = {change:+.2f}% (no change)")
+
+        # Test division by zero
+        change = calculate_percentage_change(100, 0)
+        assert change is None, f"Expected None for division by zero, got {change}"
+        print(f"[PASS] 0 -> 100 = None (division by zero handled)")
+
+        return True
+
+    except Exception as e:
+        print(f"[FAIL] {str(e)}")
+        return False
+
+
+def test_yoy_comparison_with_data():
+    """Test year-over-year comparison with data."""
+    print("\n" + "="*70)
+    print("TEST 16: Year-over-Year Comparison (With Prior Year)")
+    print("="*70)
+
+    try:
+        df = create_multi_year_sample_data()
+
+        # Compare 2021 vs 2020
+        result = calculate_kpis_with_yoy_comparison(df, 2021)
+
+        # Verify structure
+        assert 'current' in result
+        assert 'previous' in result
+        assert 'comparison' in result
+
+        # Verify current year (2021)
+        assert result['current']['year'] == 2021
+        assert result['current']['total_revenue'] == 180.0
+        assert result['current']['num_transactions'] == 4
+
+        # Verify previous year (2020)
+        assert result['previous'] is not None
+        assert result['previous']['year'] == 2020
+        assert result['previous']['total_revenue'] == 110.0
+        assert result['previous']['num_transactions'] == 3
+
+        # Verify comparison (2021 vs 2020)
+        # Revenue: (180-110)/110 * 100 = 63.64%
+        revenue_change = result['comparison']['total_revenue_change']
+        assert revenue_change is not None
+        assert abs(revenue_change - 63.636363) < 0.01, f"Expected ~63.64%, got {revenue_change}%"
+
+        # Transactions: (4-3)/3 * 100 = 33.33%
+        txn_change = result['comparison']['num_transactions_change']
+        assert txn_change is not None
+        assert abs(txn_change - 33.333333) < 0.01, f"Expected ~33.33%, got {txn_change}%"
+
+        print(f"[PASS] 2021 Revenue: ${result['current']['total_revenue']:,.2f}")
+        print(f"[PASS] 2020 Revenue: ${result['previous']['total_revenue']:,.2f}")
+        print(f"[PASS] YoY Revenue Change: {revenue_change:+.2f}%")
+        print(f"[PASS] YoY Transaction Change: {txn_change:+.2f}%")
+        return True
+
+    except Exception as e:
+        print(f"[FAIL] {str(e)}")
+        return False
+
+
+def test_yoy_comparison_without_prior_data():
+    """Test year-over-year comparison without prior year data."""
+    print("\n" + "="*70)
+    print("TEST 17: Year-over-Year Comparison (No Prior Year)")
+    print("="*70)
+
+    try:
+        df = create_multi_year_sample_data()
+
+        # Compare 2020 (first year, no prior)
+        result = calculate_kpis_with_yoy_comparison(df, 2020)
+
+        # Verify current year exists
+        assert result['current'] is not None
+        assert result['current']['year'] == 2020
+        assert result['current']['total_revenue'] == 110.0
+
+        # Verify previous year is None
+        assert result['previous'] is None
+
+        # Verify all comparisons are None
+        assert result['comparison']['total_revenue_change'] is None
+        assert result['comparison']['total_quantity_change'] is None
+        assert result['comparison']['avg_transaction_value_change'] is None
+        assert result['comparison']['num_transactions_change'] is None
+
+        print(f"[PASS] 2020 Revenue: ${result['current']['total_revenue']:,.2f}")
+        print(f"[PASS] No prior year data, all comparisons are None")
+        return True
+
+    except Exception as e:
+        print(f"[FAIL] {str(e)}")
+        return False
+
+
+def test_yoy_comparison_decline_scenario():
+    """Test year-over-year comparison with declining metrics."""
+    print("\n" + "="*70)
+    print("TEST 18: Year-over-Year Comparison (Decline Scenario)")
+    print("="*70)
+
+    try:
+        df = create_multi_year_sample_data()
+
+        # Compare 2022 vs 2021 (decline)
+        result = calculate_kpis_with_yoy_comparison(df, 2022)
+
+        # 2022: (1*10) + (2*20) = 10 + 40 = 50
+        # 2021: 180
+        # Change: (50-180)/180 * 100 = -72.22%
+
+        assert result['current']['year'] == 2022
+        assert result['current']['total_revenue'] == 50.0
+        assert result['previous']['year'] == 2021
+        assert result['previous']['total_revenue'] == 180.0
+
+        revenue_change = result['comparison']['total_revenue_change']
+        assert revenue_change is not None
+        assert revenue_change < 0, "Revenue should decline"
+        assert abs(revenue_change - (-72.222222)) < 0.01, f"Expected ~-72.22%, got {revenue_change}%"
+
+        print(f"[PASS] 2022 Revenue: ${result['current']['total_revenue']:,.2f}")
+        print(f"[PASS] 2021 Revenue: ${result['previous']['total_revenue']:,.2f}")
+        print(f"[PASS] YoY Revenue Change: {revenue_change:+.2f}% (decline)")
+        return True
+
+    except Exception as e:
+        print(f"[FAIL] {str(e)}")
+        return False
+
+
 def main():
     """Run all tests."""
     print("\n" + "#"*70)
@@ -371,7 +630,7 @@ def main():
 
     results = []
 
-    # Run tests
+    # Run basic KPI tests
     results.append(("Total Revenue", test_total_revenue()))
     results.append(("Total Quantity", test_total_quantity()))
     results.append(("Average Transaction Value", test_avg_transaction_value()))
@@ -384,6 +643,14 @@ def main():
     results.append(("Unique Customers", test_unique_customers()))
     results.append(("Unique Products", test_unique_products()))
     results.append(("Real Data KPIs", test_kpis_with_real_data()))
+
+    # Run period-over-period comparison tests
+    results.append(("Get Available Years", test_get_available_years()))
+    results.append(("KPIs for Specific Year", test_calculate_kpis_for_year()))
+    results.append(("Percentage Change", test_calculate_percentage_change()))
+    results.append(("YoY Comparison (Growth)", test_yoy_comparison_with_data()))
+    results.append(("YoY Comparison (No Prior)", test_yoy_comparison_without_prior_data()))
+    results.append(("YoY Comparison (Decline)", test_yoy_comparison_decline_scenario()))
 
     # Summary
     print("\n" + "="*70)

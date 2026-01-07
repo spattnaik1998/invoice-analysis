@@ -401,3 +401,332 @@ def calculate_unique_products(
         error_msg = f"Error calculating unique products: {e}"
         logger.error(error_msg)
         raise KPIError(error_msg)
+
+
+def calculate_kpis_for_year(
+    df: pd.DataFrame,
+    year: int,
+    year_column: str = 'invoice_year',
+    qty_column: str = 'qty',
+    amount_column: str = 'amount',
+    total_amount_column: str = 'total_amount',
+    email_column: str = 'email',
+    product_column: str = 'product_id'
+) -> dict:
+    """
+    Calculate all KPIs for a specific year.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame with year column
+        year (int): The year to calculate KPIs for
+        year_column (str): Name of year column. Defaults to 'invoice_year'
+        qty_column (str): Name of quantity column. Defaults to 'qty'
+        amount_column (str): Name of unit amount column. Defaults to 'amount'
+        total_amount_column (str): Name of total amount column. Defaults to 'total_amount'
+        email_column (str): Name of email column. Defaults to 'email'
+        product_column (str): Name of product column. Defaults to 'product_id'
+
+    Returns:
+        dict: Dictionary containing all KPIs for the specified year:
+            - year (int): The year
+            - total_revenue (float)
+            - total_quantity (int)
+            - avg_transaction_value (float)
+            - num_transactions (int)
+            - unique_customers (int)
+            - unique_products (int)
+
+    Raises:
+        KPIError: If year column is missing or other errors occur
+
+    Examples:
+        >>> kpis_2022 = calculate_kpis_for_year(df, 2022)
+        >>> print(f"2022 Revenue: ${kpis_2022['total_revenue']:,.2f}")
+    """
+    # Handle None or empty DataFrame
+    if df is None or df.empty:
+        logger.info(f"calculate_kpis_for_year: Empty DataFrame for year {year}")
+        return {
+            'year': year,
+            'total_revenue': 0.0,
+            'total_quantity': 0,
+            'avg_transaction_value': 0.0,
+            'num_transactions': 0,
+            'unique_customers': 0,
+            'unique_products': 0
+        }
+
+    # Check if year column exists
+    if year_column not in df.columns:
+        error_msg = (
+            f"Column '{year_column}' not found in DataFrame. "
+            f"Available columns: {', '.join(df.columns)}"
+        )
+        logger.error(error_msg)
+        raise KPIError(error_msg)
+
+    try:
+        # Filter data for the specified year
+        year_df = df[df[year_column] == year].copy()
+
+        if year_df.empty:
+            logger.info(f"calculate_kpis_for_year: No data found for year {year}")
+            return {
+                'year': year,
+                'total_revenue': 0.0,
+                'total_quantity': 0,
+                'avg_transaction_value': 0.0,
+                'num_transactions': 0,
+                'unique_customers': 0,
+                'unique_products': 0
+            }
+
+        # Calculate all KPIs for this year
+        kpis = {
+            'year': year,
+            'total_revenue': calculate_total_revenue(
+                year_df, qty_column, amount_column, total_amount_column
+            ),
+            'total_quantity': calculate_total_quantity(year_df, qty_column),
+            'avg_transaction_value': calculate_average_transaction_value(
+                year_df, qty_column, amount_column, total_amount_column
+            ),
+            'num_transactions': calculate_num_transactions(year_df),
+            'unique_customers': calculate_unique_customers(year_df, email_column),
+            'unique_products': calculate_unique_products(year_df, product_column)
+        }
+
+        logger.info(
+            f"calculate_kpis_for_year {year}: Revenue=${kpis['total_revenue']:,.2f}, "
+            f"Transactions={kpis['num_transactions']:,}"
+        )
+
+        return kpis
+
+    except KPIError:
+        raise
+    except Exception as e:
+        error_msg = f"Error calculating KPIs for year {year}: {e}"
+        logger.error(error_msg)
+        raise KPIError(error_msg)
+
+
+def calculate_percentage_change(
+    current_value: float,
+    previous_value: float
+) -> Optional[float]:
+    """
+    Calculate percentage change between current and previous values.
+
+    Args:
+        current_value (float): Current period value
+        previous_value (float): Previous period value
+
+    Returns:
+        Optional[float]: Percentage change, or None if previous_value is 0
+
+    Examples:
+        >>> change = calculate_percentage_change(120, 100)
+        >>> print(f"Change: {change:+.2f}%")  # Output: Change: +20.00%
+    """
+    if previous_value == 0:
+        logger.debug("calculate_percentage_change: Previous value is 0, returning None")
+        return None
+
+    pct_change = ((current_value - previous_value) / previous_value) * 100
+    return float(pct_change)
+
+
+def calculate_kpis_with_yoy_comparison(
+    df: pd.DataFrame,
+    current_year: int,
+    year_column: str = 'invoice_year',
+    qty_column: str = 'qty',
+    amount_column: str = 'amount',
+    total_amount_column: str = 'total_amount',
+    email_column: str = 'email',
+    product_column: str = 'product_id'
+) -> dict:
+    """
+    Calculate KPIs with year-over-year (YoY) comparison.
+
+    This function computes all KPIs for the current year and compares them
+    with the previous year, calculating percentage changes for each metric.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame with year column
+        current_year (int): The current year to analyze
+        year_column (str): Name of year column. Defaults to 'invoice_year'
+        qty_column (str): Name of quantity column. Defaults to 'qty'
+        amount_column (str): Name of unit amount column. Defaults to 'amount'
+        total_amount_column (str): Name of total amount column. Defaults to 'total_amount'
+        email_column (str): Name of email column. Defaults to 'email'
+        product_column (str): Name of product column. Defaults to 'product_id'
+
+    Returns:
+        dict: Dictionary containing:
+            - current (dict): All KPIs for current year
+            - previous (dict): All KPIs for previous year (or None if unavailable)
+            - comparison (dict): Percentage changes for each KPI (or None if unavailable)
+                - total_revenue_change (float or None)
+                - total_quantity_change (float or None)
+                - avg_transaction_value_change (float or None)
+                - num_transactions_change (float or None)
+                - unique_customers_change (float or None)
+                - unique_products_change (float or None)
+
+    Examples:
+        >>> result = calculate_kpis_with_yoy_comparison(df, 2022)
+        >>> print(f"2022 Revenue: ${result['current']['total_revenue']:,.2f}")
+        >>> if result['comparison']['total_revenue_change'] is not None:
+        ...     print(f"YoY Change: {result['comparison']['total_revenue_change']:+.2f}%")
+    """
+    # Handle None or empty DataFrame
+    if df is None or df.empty:
+        logger.warning(f"calculate_kpis_with_yoy_comparison: Empty DataFrame")
+        return {
+            'current': {
+                'year': current_year,
+                'total_revenue': 0.0,
+                'total_quantity': 0,
+                'avg_transaction_value': 0.0,
+                'num_transactions': 0,
+                'unique_customers': 0,
+                'unique_products': 0
+            },
+            'previous': None,
+            'comparison': {
+                'total_revenue_change': None,
+                'total_quantity_change': None,
+                'avg_transaction_value_change': None,
+                'num_transactions_change': None,
+                'unique_customers_change': None,
+                'unique_products_change': None
+            }
+        }
+
+    try:
+        # Calculate KPIs for current year
+        current_kpis = calculate_kpis_for_year(
+            df, current_year, year_column, qty_column, amount_column,
+            total_amount_column, email_column, product_column
+        )
+
+        # Calculate KPIs for previous year
+        previous_year = current_year - 1
+        previous_kpis = calculate_kpis_for_year(
+            df, previous_year, year_column, qty_column, amount_column,
+            total_amount_column, email_column, product_column
+        )
+
+        # Check if previous year has data
+        has_previous_data = previous_kpis['num_transactions'] > 0
+
+        if not has_previous_data:
+            logger.info(
+                f"calculate_kpis_with_yoy_comparison: No data for previous year {previous_year}"
+            )
+            return {
+                'current': current_kpis,
+                'previous': None,
+                'comparison': {
+                    'total_revenue_change': None,
+                    'total_quantity_change': None,
+                    'avg_transaction_value_change': None,
+                    'num_transactions_change': None,
+                    'unique_customers_change': None,
+                    'unique_products_change': None
+                }
+            }
+
+        # Calculate percentage changes
+        comparison = {
+            'total_revenue_change': calculate_percentage_change(
+                current_kpis['total_revenue'],
+                previous_kpis['total_revenue']
+            ),
+            'total_quantity_change': calculate_percentage_change(
+                current_kpis['total_quantity'],
+                previous_kpis['total_quantity']
+            ),
+            'avg_transaction_value_change': calculate_percentage_change(
+                current_kpis['avg_transaction_value'],
+                previous_kpis['avg_transaction_value']
+            ),
+            'num_transactions_change': calculate_percentage_change(
+                current_kpis['num_transactions'],
+                previous_kpis['num_transactions']
+            ),
+            'unique_customers_change': calculate_percentage_change(
+                current_kpis['unique_customers'],
+                previous_kpis['unique_customers']
+            ),
+            'unique_products_change': calculate_percentage_change(
+                current_kpis['unique_products'],
+                previous_kpis['unique_products']
+            )
+        }
+
+        logger.info(
+            f"calculate_kpis_with_yoy_comparison: {current_year} vs {previous_year} - "
+            f"Revenue change: {comparison['total_revenue_change']:+.2f}% "
+            if comparison['total_revenue_change'] is not None else "N/A"
+        )
+
+        return {
+            'current': current_kpis,
+            'previous': previous_kpis,
+            'comparison': comparison
+        }
+
+    except KPIError:
+        raise
+    except Exception as e:
+        error_msg = f"Error calculating YoY comparison for year {current_year}: {e}"
+        logger.error(error_msg)
+        raise KPIError(error_msg)
+
+
+def get_available_years(
+    df: pd.DataFrame,
+    year_column: str = 'invoice_year'
+) -> list:
+    """
+    Get sorted list of available years in the dataset.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame with year column
+        year_column (str): Name of year column. Defaults to 'invoice_year'
+
+    Returns:
+        list: Sorted list of years (ascending order). Empty list if no data.
+
+    Raises:
+        KPIError: If year column is missing from DataFrame
+
+    Examples:
+        >>> years = get_available_years(df)
+        >>> print(f"Available years: {years}")  # [1970, 1971, ..., 2022]
+    """
+    # Handle None or empty DataFrame
+    if df is None or df.empty:
+        logger.info("get_available_years: Empty DataFrame, returning empty list")
+        return []
+
+    # Check if year column exists
+    if year_column not in df.columns:
+        error_msg = (
+            f"Column '{year_column}' not found in DataFrame. "
+            f"Available columns: {', '.join(df.columns)}"
+        )
+        logger.error(error_msg)
+        raise KPIError(error_msg)
+
+    try:
+        years = sorted(df[year_column].unique().tolist())
+        logger.debug(f"get_available_years: Found {len(years)} years")
+        return years
+    except Exception as e:
+        error_msg = f"Error getting available years: {e}"
+        logger.error(error_msg)
+        raise KPIError(error_msg)

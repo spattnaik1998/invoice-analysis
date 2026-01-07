@@ -20,6 +20,9 @@ from .kpis import (
     calculate_all_kpis,
     calculate_unique_customers,
     calculate_unique_products,
+    calculate_kpis_for_year,
+    calculate_kpis_with_yoy_comparison,
+    get_available_years,
     KPIError
 )
 
@@ -42,5 +45,9 @@ __all__ = [
     'calculate_all_kpis',
     'calculate_unique_customers',
     'calculate_unique_products',
+    # Period-over-period comparison functions
+    'calculate_kpis_for_year',
+    'calculate_kpis_with_yoy_comparison',
+    'get_available_years',
     'KPIError'
 ]
