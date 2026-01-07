@@ -313,6 +313,78 @@ class DashboardComponents:
         st.plotly_chart(fig, use_container_width=True)
 
     @staticmethod
+    def render_quantity_trend_chart(
+        data: pd.DataFrame,
+        x_col: str = 'invoice_year',
+        y_col: str = 'total_quantity',
+        title: str = 'Yearly Quantity Sold Trend',
+        color: str = "#27AE60"
+    ) -> None:
+        """
+        Render an interactive quantity sold trend line chart optimized for time-series data.
+
+        This chart follows time-series visualization best practices and is visually
+        distinguished from the revenue chart through color and formatting.
+
+        Args:
+            data (pd.DataFrame): Data with year and quantity columns
+            x_col (str): Column name for x-axis (year). Defaults to 'invoice_year'
+            y_col (str): Column name for y-axis (quantity). Defaults to 'total_quantity'
+            title (str): Chart title
+            color (str): Line color (default: green #27AE60 to distinguish from revenue)
+        """
+        # Handle empty data
+        if data.empty:
+            st.warning("No data available for the selected filters.")
+            return
+
+        # Create the line chart with custom hover template
+        fig = px.line(
+            data,
+            x=x_col,
+            y=y_col,
+            title=title,
+            markers=True
+        )
+
+        # Update traces for better visualization (distinct from revenue chart)
+        fig.update_traces(
+            line_color=color,
+            line_width=3,
+            marker=dict(size=10, line=dict(width=2, color='white')),
+            hovertemplate='<b>Year: %{x}</b><br>Quantity: %{y:,} units<extra></extra>'
+        )
+
+        # Update layout for time-series best practices
+        fig.update_layout(
+            hovermode='x unified',
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            font=dict(family="Arial, sans-serif", size=12),
+            title_font_size=18,
+            title_x=0.05,
+            xaxis=dict(
+                title="Year",
+                showgrid=True,
+                gridcolor='#E5E5E5',
+                gridwidth=1,
+                dtick=1,  # Show every year
+                tickmode='linear'
+            ),
+            yaxis=dict(
+                title="Total Quantity Sold (units)",
+                showgrid=True,
+                gridcolor='#E5E5E5',
+                gridwidth=1,
+                tickformat=',',  # Format with thousand separators
+                rangemode='tozero'  # Start from zero for quantity
+            ),
+            margin=dict(l=60, r=30, t=60, b=60)
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    @staticmethod
     def render_filters(
         available_years: List[int],
         available_products: List[int]

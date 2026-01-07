@@ -189,11 +189,26 @@ def main():
 
         st.markdown("---")
 
+        # Yearly Quantity Sold Trend Chart
+        st.subheader("📊 Yearly Quantity Sold Trend")
+        yearly_quantity_data = filtered_transformer.get_yearly_quantity()
+
+        if not yearly_quantity_data.empty:
+            DashboardComponents.render_quantity_trend_chart(
+                data=yearly_quantity_data,
+                x_col='invoice_year',
+                y_col='total_quantity',
+                title='Quantity Sold Trend Over Time'
+            )
+        else:
+            st.warning("No quantity data available for the selected filters.")
+
+        st.markdown("---")
+
         # Placeholder for remaining visualizations
         st.info(
             """
             **Coming Soon:**
-            - Yearly Quantity Sold Trend Line Chart
             - Top 10 Products by Revenue (Bar Chart)
             - Product Performance Heatmap
             - Daily Transaction Volume (Area Chart)
