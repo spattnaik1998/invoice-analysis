@@ -237,6 +237,82 @@ class DashboardComponents:
         st.plotly_chart(fig, use_container_width=True)
 
     @staticmethod
+    def render_revenue_trend_chart(
+        data: pd.DataFrame,
+        x_col: str = 'invoice_year',
+        y_col: str = 'total_revenue',
+        title: str = 'Yearly Revenue Trend',
+        color: str = "#1F4E78"
+    ) -> None:
+        """
+        Render an interactive revenue trend line chart optimized for time-series data.
+
+        This chart follows time-series visualization best practices:
+        - Clear temporal progression on x-axis
+        - Appropriate formatting for currency values
+        - Interactive tooltips with detailed information
+        - Markers to highlight individual data points
+        - Responsive design
+
+        Args:
+            data (pd.DataFrame): Data with year and revenue columns
+            x_col (str): Column name for x-axis (year). Defaults to 'invoice_year'
+            y_col (str): Column name for y-axis (revenue). Defaults to 'total_revenue'
+            title (str): Chart title
+            color (str): Line color
+        """
+        # Handle empty data
+        if data.empty:
+            st.warning("No data available for the selected filters.")
+            return
+
+        # Create the line chart with custom hover template
+        fig = px.line(
+            data,
+            x=x_col,
+            y=y_col,
+            title=title,
+            markers=True
+        )
+
+        # Update traces for better visualization
+        fig.update_traces(
+            line_color=color,
+            line_width=3,
+            marker=dict(size=10, line=dict(width=2, color='white')),
+            hovertemplate='<b>Year: %{x}</b><br>Revenue: $%{y:,.2f}<extra></extra>'
+        )
+
+        # Update layout for time-series best practices
+        fig.update_layout(
+            hovermode='x unified',
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            font=dict(family="Arial, sans-serif", size=12),
+            title_font_size=18,
+            title_x=0.05,
+            xaxis=dict(
+                title="Year",
+                showgrid=True,
+                gridcolor='#E5E5E5',
+                gridwidth=1,
+                dtick=1,  # Show every year
+                tickmode='linear'
+            ),
+            yaxis=dict(
+                title="Total Revenue ($)",
+                showgrid=True,
+                gridcolor='#E5E5E5',
+                gridwidth=1,
+                tickformat='$,.0f',  # Format as currency
+                rangemode='tozero'  # Start from zero for revenue
+            ),
+            margin=dict(l=60, r=30, t=60, b=60)
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    @staticmethod
     def render_filters(
         available_years: List[int],
         available_products: List[int]

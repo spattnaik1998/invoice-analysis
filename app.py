@@ -170,12 +170,29 @@ def main():
 
         st.markdown("---")
 
-        # Placeholder for future visualizations
+        # Visualizations Section
         st.header("Visualizations")
+
+        # Yearly Revenue Trend Chart
+        st.subheader("📈 Yearly Revenue Trend")
+        yearly_revenue_data = filtered_transformer.get_yearly_revenue()
+
+        if not yearly_revenue_data.empty:
+            DashboardComponents.render_revenue_trend_chart(
+                data=yearly_revenue_data,
+                x_col='invoice_year',
+                y_col='total_revenue',
+                title='Revenue Trend Over Time'
+            )
+        else:
+            st.warning("No revenue data available for the selected filters.")
+
+        st.markdown("---")
+
+        # Placeholder for remaining visualizations
         st.info(
             """
             **Coming Soon:**
-            - Yearly Revenue Trend Line Chart
             - Yearly Quantity Sold Trend Line Chart
             - Top 10 Products by Revenue (Bar Chart)
             - Product Performance Heatmap
