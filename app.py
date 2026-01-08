@@ -357,15 +357,69 @@ def main():
 
         st.markdown("---")
 
-        # Placeholder for remaining visualizations
-        st.info(
-            """
-            **Coming Soon:**
-            - Product-Specific Performance Line Chart
+        # Product Performance Comparison
+        st.subheader("📈 Product Performance Comparison")
 
-            Features will be built one at a time in subsequent iterations.
-            """
-        )
+        # User guidance based on number of products
+        if len(selected_products) == 1:
+            st.info("💡 Viewing performance for a single product. Select multiple products in the sidebar to compare.")
+        elif len(selected_products) <= 10:
+            st.info(
+                f"💡 Comparing {len(selected_products)} products. "
+                "Click legend items to hide/show products. Double-click to isolate a single product."
+            )
+        else:
+            st.info(
+                f"💡 Comparing {len(selected_products)} products. "
+                "Chart may be cluttered - consider filtering to fewer products for clarity. "
+                "Use the legend to toggle products on/off."
+            )
+
+        # Get multi-product performance data
+        try:
+            product_performance_data = filtered_transformer.get_multi_product_performance(
+                product_ids=selected_products
+            )
+
+            if not product_performance_data.empty:
+                DashboardComponents.render_multi_product_line_chart(
+                    data=product_performance_data,
+                    title='Yearly Revenue by Product',
+                    y_metric='revenue'
+                )
+
+                # Show summary for selected products
+                st.markdown("### Product Summary")
+
+                # Calculate per-product totals
+                product_totals = product_performance_data.groupby('product_id')['revenue'].agg([
+                    ('total_revenue', 'sum'),
+                    ('avg_yearly_revenue', 'mean'),
+                    ('years_active', 'count')
+                ]).reset_index()
+
+                product_totals = product_totals.sort_values('total_revenue', ascending=False)
+
+                # Display as table
+                product_totals['total_revenue'] = product_totals['total_revenue'].apply(
+                    lambda x: f"${x:,.2f}"
+                )
+                product_totals['avg_yearly_revenue'] = product_totals['avg_yearly_revenue'].apply(
+                    lambda x: f"${x:,.2f}"
+                )
+
+                product_totals.columns = ['Product ID', 'Total Revenue', 'Avg Yearly Revenue', 'Years Active']
+
+                st.dataframe(
+                    product_totals,
+                    hide_index=True,
+                    use_container_width=True
+                )
+            else:
+                st.warning("No product performance data available for the selected filters.")
+        except Exception as e:
+            st.error(f"Error generating product performance chart: {str(e)}")
+            st.exception(e)
 
     except FileNotFoundError as e:
         st.error(f"Error: {str(e)}")

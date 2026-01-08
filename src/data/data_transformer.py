@@ -239,6 +239,39 @@ class DataTransformer:
         performance.columns = ['invoice_year', 'revenue', 'quantity']
         return performance.sort_values('invoice_year')
 
+    def get_multi_product_performance(self, product_ids: List[int] = None) -> pd.DataFrame:
+        """
+        Get yearly revenue performance for multiple products.
+
+        This method enables product comparison by returning revenue data
+        for each product separately, suitable for multi-trace line charts.
+
+        Args:
+            product_ids (List[int], optional): List of product IDs to include.
+                If None, uses all products in current filtered data.
+
+        Returns:
+            pd.DataFrame: Multi-product performance with columns:
+                - invoice_year: Year
+                - product_id: Product identifier
+                - revenue: Total revenue for that product in that year
+        """
+        # Use all products in filtered data if not specified
+        if product_ids is None:
+            product_ids = self.df['product_id'].unique().tolist()
+
+        # Filter to requested products only
+        filtered_df = self.df[self.df['product_id'].isin(product_ids)]
+
+        # Group by year and product
+        performance = filtered_df.groupby(['invoice_year', 'product_id']).agg({
+            'total_amount': 'sum'
+        }).reset_index()
+
+        performance.columns = ['invoice_year', 'product_id', 'revenue']
+
+        return performance.sort_values(['invoice_year', 'product_id'])
+
     def get_available_years(self) -> List[int]:
         """
         Get list of all available years in the dataset.

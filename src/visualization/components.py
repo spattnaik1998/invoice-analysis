@@ -490,6 +490,99 @@ class DashboardComponents:
         return event
 
     @staticmethod
+    def render_multi_product_line_chart(
+        data: pd.DataFrame,
+        title: str = "Product Performance Comparison",
+        y_metric: str = 'revenue'
+    ) -> None:
+        """
+        Render multi-product line chart with interactive legend.
+
+        Each product is shown as a separate colored line. Users can click
+        legend items to toggle products on/off for comparison.
+
+        Args:
+            data (pd.DataFrame): Multi-product data with columns:
+                - invoice_year: X-axis values
+                - product_id: Product identifier (creates separate traces)
+                - revenue (or other metric): Y-axis values
+            title (str): Chart title
+            y_metric (str): Column name for Y-axis metric (default: 'revenue')
+        """
+        if data.empty:
+            st.warning("No product performance data available.")
+            return
+
+        # Count unique products for warning
+        num_products = data['product_id'].nunique()
+
+        # Show warning if many products
+        if num_products > 10:
+            st.warning(
+                f"⚠️ Displaying {num_products} products. "
+                "Chart may be cluttered. Consider filtering to fewer products for clarity."
+            )
+
+        # Create multi-trace line chart
+        fig = px.line(
+            data,
+            x='invoice_year',
+            y=y_metric,
+            color='product_id',
+            title=title,
+            labels={
+                'invoice_year': 'Year',
+                y_metric: 'Revenue ($)' if y_metric == 'revenue' else y_metric.title(),
+                'product_id': 'Product ID'
+            },
+            markers=True
+        )
+
+        # Update traces for better visibility
+        fig.update_traces(
+            line=dict(width=2.5),
+            marker=dict(size=8, line=dict(width=1.5, color='white')),
+            hovertemplate='<b>Product %{fullData.name}</b><br>Year: %{x}<br>Revenue: $%{y:,.2f}<extra></extra>'
+        )
+
+        # Update layout
+        fig.update_layout(
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            font=dict(family="Arial, sans-serif", size=12),
+            title_font_size=16,
+            xaxis=dict(
+                showgrid=True,
+                gridcolor='lightgray',
+                title='Year',
+                dtick=1
+            ),
+            yaxis=dict(
+                showgrid=True,
+                gridcolor='lightgray',
+                title='Revenue ($)',
+                tickformat='$,.0f',
+                rangemode='tozero'
+            ),
+            hovermode='x unified',
+            legend=dict(
+                title='Product ID',
+                orientation='v',
+                yanchor='top',
+                y=1,
+                xanchor='left',
+                x=1.02,
+                bgcolor='rgba(255,255,255,0.8)',
+                bordercolor='lightgray',
+                borderwidth=1
+            ),
+            legend_itemclick='toggle',
+            legend_itemdoubleclick='toggleothers'
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    @staticmethod
     def render_filters(
         available_years: List[int],
         available_products: List[int]
