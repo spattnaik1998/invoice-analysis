@@ -144,12 +144,13 @@ class DataTransformer:
         Get product-year revenue data for heatmap visualization.
 
         Returns:
-            pd.DataFrame: Pivot table with years as index, products as columns
+            pd.DataFrame: Pivot table with products as index (Y-axis),
+                         years as columns (X-axis)
         """
         heatmap_data = self.df.pivot_table(
-            index='invoice_year',
-            columns='product_id',
-            values='total_amount',
+            index='product_id',           # Y-axis: Products
+            columns='invoice_year',       # X-axis: Years
+            values='total_amount',        # Color: Revenue
             aggfunc='sum',
             fill_value=0
         )
@@ -167,6 +168,56 @@ class DataTransformer:
         }).reset_index()
         daily.columns = ['invoice_date', 'num_transactions']
         return daily.sort_values('invoice_date')
+
+    def get_transaction_volume(self, freq: str = 'D') -> pd.DataFrame:
+        """
+        Get transaction volume with continuous date range and configurable aggregation.
+
+        This method provides time-series transaction volume data with automatic
+        gap-filling for missing dates, supporting multiple aggregation levels.
+
+        Args:
+            freq (str): Resampling frequency (default: 'D')
+                - 'D': Daily (every calendar day)
+                - 'W': Weekly (Sunday to Saturday)
+                - 'M': Monthly (end of month)
+
+        Returns:
+            pd.DataFrame: Continuous transaction volume with columns [date, volume]
+                - date: Datetime index at specified frequency
+                - volume: Integer count of transactions (zeros for missing dates)
+
+        Raises:
+            ValueError: If freq is not 'D', 'W', or 'M'
+        """
+        # Ensure we have a datetime index
+        df_temp = self.df.copy()
+        df_temp = df_temp.set_index('invoice_date')
+
+        # Count transactions per original date
+        daily_counts = df_temp.resample('D').size()
+
+        # Resample to requested frequency
+        if freq == 'D':
+            # Already daily, just ensure continuous range
+            result = daily_counts
+        elif freq == 'W':
+            # Weekly aggregation (Sunday start)
+            result = daily_counts.resample('W-SUN').sum()
+        elif freq == 'M':
+            # Monthly aggregation (end of month)
+            result = daily_counts.resample('ME').sum()
+        else:
+            raise ValueError(f"Invalid frequency: {freq}. Use 'D', 'W', or 'M'.")
+
+        # Convert to DataFrame
+        result_df = result.reset_index()
+        result_df.columns = ['date', 'volume']
+
+        # Fill any remaining NaN values with 0
+        result_df['volume'] = result_df['volume'].fillna(0).astype(int)
+
+        return result_df
 
     def get_product_performance(self, product_id: int) -> pd.DataFrame:
         """

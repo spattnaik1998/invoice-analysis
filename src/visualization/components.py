@@ -160,7 +160,13 @@ class DashboardComponents:
         color: str = "#4A90E2"
     ) -> None:
         """
-        Render an interactive area chart.
+        Render an interactive area chart with zoom and pan capabilities.
+
+        This chart includes built-in interactivity for data exploration:
+        - Click and drag to zoom into a region
+        - Shift + drag to pan across the timeline
+        - Double-click to reset to original view
+        - Modebar tools for additional zoom/pan/reset options
 
         Args:
             data (pd.DataFrame): Data to plot
@@ -169,8 +175,12 @@ class DashboardComponents:
             title (str): Chart title
             x_label (str): X-axis label
             y_label (str): Y-axis label
-            color (str): Fill color
+            color (str): Fill color (default: #4A90E2 - light blue)
         """
+        if data.empty:
+            st.warning("No data available for the selected filters.")
+            return
+
         fig = px.area(
             data,
             x=x_col,
@@ -182,7 +192,8 @@ class DashboardComponents:
         fig.update_traces(
             line_color=color,
             fillcolor=color,
-            opacity=0.6
+            opacity=0.6,
+            hovertemplate='<b>%{x|%Y-%m-%d}</b><br>Volume: %{y:,}<extra></extra>'
         )
 
         fig.update_layout(
@@ -191,8 +202,24 @@ class DashboardComponents:
             paper_bgcolor='white',
             font=dict(family="Arial, sans-serif", size=12),
             title_font_size=16,
-            xaxis=dict(showgrid=True, gridcolor='lightgray'),
-            yaxis=dict(showgrid=True, gridcolor='lightgray')
+            xaxis=dict(
+                showgrid=True,
+                gridcolor='lightgray',
+                title=x_label,
+                rangeslider=dict(visible=False)
+            ),
+            yaxis=dict(
+                showgrid=True,
+                gridcolor='lightgray',
+                title=y_label,
+                rangemode='tozero'
+            ),
+            dragmode='zoom',
+            modebar=dict(
+                orientation='h',
+                bgcolor='rgba(255,255,255,0.7)',
+                activecolor='#4A90E2'
+            )
         )
 
         st.plotly_chart(fig, use_container_width=True)
@@ -201,8 +228,8 @@ class DashboardComponents:
     def render_heatmap(
         data: pd.DataFrame,
         title: str,
-        x_label: str = "Product ID",
-        y_label: str = "Year",
+        x_label: str = "Year",
+        y_label: str = "Product ID",
         color_scale: str = "Blues"
     ) -> None:
         """
@@ -221,7 +248,7 @@ class DashboardComponents:
             y=data.index,
             colorscale=color_scale,
             hoverongaps=False,
-            hovertemplate='Product: %{x}<br>Year: %{y}<br>Revenue: $%{z:,.2f}<extra></extra>'
+            hovertemplate='Year: %{x}<br>Product: %{y}<br>Revenue: $%{z:,.2f}<extra></extra>'
         ))
 
         fig.update_layout(
@@ -383,6 +410,84 @@ class DashboardComponents:
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+    @staticmethod
+    def render_top_products_bar_chart(
+        data: pd.DataFrame,
+        title: str = "Top 10 Products by Revenue"
+    ) -> dict:
+        """
+        Render interactive horizontal bar chart for top products with click-to-filter.
+
+        This chart displays the top products by revenue with horizontal bars,
+        allowing users to click on any bar to filter the entire dashboard to that
+        specific product. The chart includes:
+        - Horizontal orientation for better readability
+        - Color gradient based on revenue values
+        - Custom tooltips with formatted currency
+        - Click event support for interactive filtering
+
+        Args:
+            data (pd.DataFrame): DataFrame with columns [product_id, total_revenue]
+            title (str): Chart title (default: "Top 10 Products by Revenue")
+
+        Returns:
+            dict: Event data from st.plotly_chart for click handling, or None if data is empty
+        """
+        if data.empty:
+            st.warning("No product data available for the selected filters.")
+            return None
+
+        # Sort ascending for horizontal bar display (bottom to top)
+        data = data.sort_values('total_revenue', ascending=True)
+
+        # Format product_id as string for better display
+        data['product_label'] = 'Product ' + data['product_id'].astype(str)
+
+        # Create horizontal bar chart
+        fig = px.bar(
+            data,
+            x='total_revenue',
+            y='product_label',
+            orientation='h',
+            color='total_revenue',
+            color_continuous_scale='Teal',
+            title=title,
+            labels={'total_revenue': 'Total Revenue ($)', 'product_label': 'Product'},
+            custom_data=['product_id']
+        )
+
+        # Update traces with custom tooltip
+        fig.update_traces(
+            hovertemplate='<b>%{y}</b><br>Revenue: $%{x:,.2f}<extra></extra>',
+            marker=dict(line=dict(width=0))
+        )
+
+        # Update layout
+        fig.update_layout(
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            font=dict(family="Arial, sans-serif", size=12),
+            title_font_size=16,
+            xaxis=dict(
+                showgrid=True,
+                gridcolor='lightgray',
+                tickformat='$,.0f'
+            ),
+            yaxis=dict(showgrid=False),
+            showlegend=False,
+            height=400
+        )
+
+        # Render with click event support
+        event = st.plotly_chart(
+            fig,
+            use_container_width=True,
+            key="top_products_chart",
+            on_select="rerun"
+        )
+
+        return event
 
     @staticmethod
     def render_filters(

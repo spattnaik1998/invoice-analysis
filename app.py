@@ -84,10 +84,27 @@ def load_and_prepare_data():
     return transformer
 
 
+def initialize_session_state():
+    """
+    Initialize session state for filter management.
+
+    Session state variables:
+    - selected_products_override: Override sidebar product filter (used for chart clicks)
+    - filter_source: Track if filter came from 'sidebar' or 'chart_click'
+    """
+    if 'selected_products_override' not in st.session_state:
+        st.session_state.selected_products_override = None
+    if 'filter_source' not in st.session_state:
+        st.session_state.filter_source = 'sidebar'
+
+
 def main():
     """
     Main application function.
     """
+    # Initialize session state for filter management
+    initialize_session_state()
+
     # Header
     st.title(f"{APP_ICON} {APP_TITLE}")
     st.markdown(
@@ -111,6 +128,35 @@ def main():
             available_years,
             available_products
         )
+
+        # Apply session state overrides from chart clicks
+        if st.session_state.selected_products_override is not None:
+            selected_products = st.session_state.selected_products_override
+
+            # Show clear filter button
+            if st.sidebar.button("🔄 Clear Product Filter", use_container_width=True):
+                st.session_state.selected_products_override = None
+                st.session_state.filter_source = 'sidebar'
+                st.rerun()
+
+        # Transaction Volume Aggregation Selector
+        st.sidebar.markdown("---")
+        st.sidebar.subheader("Transaction Volume")
+
+        aggregation_level = st.sidebar.selectbox(
+            "Aggregation Level",
+            options=['Daily', 'Weekly', 'Monthly'],
+            index=0,  # Default to Daily
+            help="Select the time granularity for transaction volume analysis"
+        )
+
+        # Map display names to pandas frequency codes
+        aggregation_map = {
+            'Daily': 'D',
+            'Weekly': 'W',
+            'Monthly': 'M'
+        }
+        freq_code = aggregation_map[aggregation_level]
 
         # Validate filter selections
         if not selected_years:
@@ -205,13 +251,116 @@ def main():
 
         st.markdown("---")
 
+        # Top 10 Products by Revenue with Click-to-Filter
+        st.subheader("🏆 Top 10 Products by Revenue")
+
+        # User guidance
+        st.info("💡 Click on any bar to filter the entire dashboard to that product. Use the sidebar button to clear the filter.")
+
+        top_products_data = filtered_transformer.get_top_products(n=10)
+
+        if not top_products_data.empty:
+            event = DashboardComponents.render_top_products_bar_chart(
+                data=top_products_data,
+                title='Top 10 Products by Total Revenue'
+            )
+
+            # Handle click event
+            if event and event.get('selection') and event['selection'].get('points'):
+                points = event['selection']['points']
+                if len(points) > 0:
+                    try:
+                        clicked_product_id = int(points[0]['customdata'][0])
+
+                        # Update session state to filter by clicked product
+                        st.session_state.selected_products_override = [clicked_product_id]
+                        st.session_state.filter_source = 'chart_click'
+                        st.rerun()
+                    except (KeyError, IndexError, ValueError) as e:
+                        st.error(f"Error processing click event: {e}")
+        else:
+            st.warning("No product data available for the selected filters.")
+
+        st.markdown("---")
+
+        # Product vs Year Revenue Heatmap
+        st.subheader("🔥 Product Performance Heatmap")
+
+        # User guidance
+        st.info("💡 Explore revenue patterns across all products and years. Darker colors indicate higher revenue.")
+
+        heatmap_data = filtered_transformer.get_product_year_heatmap_data()
+
+        if not heatmap_data.empty:
+            DashboardComponents.render_heatmap(
+                data=heatmap_data,
+                title='Revenue by Product and Year',
+                x_label='Year',
+                y_label='Product ID',
+                color_scale='Blues'
+            )
+        else:
+            st.warning("No heatmap data available for the selected filters.")
+
+        st.markdown("---")
+
+        # Daily Transaction Volume Chart
+        st.subheader("📊 Transaction Volume Over Time")
+
+        # User guidance
+        st.info(
+            f"💡 Viewing transaction volume at **{aggregation_level.lower()}** level. "
+            "Use the aggregation selector in the sidebar to change granularity. "
+            "Click and drag to zoom, double-click to reset."
+        )
+
+        # Get transaction volume data
+        try:
+            volume_data = filtered_transformer.get_transaction_volume(freq=freq_code)
+
+            if not volume_data.empty:
+                DashboardComponents.render_area_chart(
+                    data=volume_data,
+                    x_col='date',
+                    y_col='volume',
+                    title=f'{aggregation_level} Transaction Volume',
+                    x_label='Date',
+                    y_label='Number of Transactions',
+                    color='#4A90E2'
+                )
+
+                # Show summary statistics
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric(
+                        "Total Transactions",
+                        f"{int(volume_data['volume'].sum()):,}",
+                        help=f"Total transactions in the selected {aggregation_level.lower()} period"
+                    )
+                with col2:
+                    st.metric(
+                        f"Avg {aggregation_level} Volume",
+                        f"{int(volume_data['volume'].mean()):,}",
+                        help=f"Average transactions per {aggregation_level.lower()} period"
+                    )
+                with col3:
+                    st.metric(
+                        f"Peak {aggregation_level}",
+                        f"{int(volume_data['volume'].max()):,}",
+                        help=f"Highest transaction count in a {aggregation_level.lower()} period"
+                    )
+            else:
+                st.warning("No transaction volume data available for the selected filters.")
+        except Exception as e:
+            st.error(f"Error generating transaction volume chart: {str(e)}")
+            st.exception(e)
+
+        st.markdown("---")
+
         # Placeholder for remaining visualizations
         st.info(
             """
             **Coming Soon:**
-            - Top 10 Products by Revenue (Bar Chart)
-            - Product Performance Heatmap
-            - Daily Transaction Volume (Area Chart)
             - Product-Specific Performance Line Chart
 
             Features will be built one at a time in subsequent iterations.
