@@ -41,19 +41,27 @@ class DataTransformer:
         - invoice_year: Year extracted from invoice_date
         - invoice_month: Month extracted from invoice_date
         - invoice_day: Day extracted from invoice_date
+
+        Note: Only adds fields if they don't already exist to avoid
+        redundant recalculation when filtering creates new instances.
         """
         # Customer full name
-        self.df['full_name'] = (
-            self.df['first_name'] + ' ' + self.df['last_name']
-        )
+        if 'full_name' not in self.df.columns:
+            self.df['full_name'] = (
+                self.df['first_name'] + ' ' + self.df['last_name']
+            )
 
         # Total transaction amount
-        self.df['total_amount'] = self.df['qty'] * self.df['amount']
+        if 'total_amount' not in self.df.columns:
+            self.df['total_amount'] = self.df['qty'] * self.df['amount']
 
         # Date components
-        self.df['invoice_year'] = self.df['invoice_date'].dt.year
-        self.df['invoice_month'] = self.df['invoice_date'].dt.month
-        self.df['invoice_day'] = self.df['invoice_date'].dt.day
+        if 'invoice_year' not in self.df.columns:
+            self.df['invoice_year'] = self.df['invoice_date'].dt.year
+        if 'invoice_month' not in self.df.columns:
+            self.df['invoice_month'] = self.df['invoice_date'].dt.month
+        if 'invoice_day' not in self.df.columns:
+            self.df['invoice_day'] = self.df['invoice_date'].dt.day
 
     def filter_by_years(self, years: List[int]) -> 'DataTransformer':
         """
@@ -188,8 +196,16 @@ class DataTransformer:
                 - volume: Integer count of transactions (zeros for missing dates)
 
         Raises:
-            ValueError: If freq is not 'D', 'W', or 'M'
+            ValueError: If freq is not 'D', 'W', or 'M', or if data is empty
         """
+        # Handle empty dataframe
+        if self.df.empty:
+            return pd.DataFrame(columns=['date', 'volume'])
+
+        # Validate invoice_date column exists
+        if 'invoice_date' not in self.df.columns:
+            raise ValueError("invoice_date column not found in dataframe")
+
         # Ensure we have a datetime index
         df_temp = self.df.copy()
         df_temp = df_temp.set_index('invoice_date')
@@ -206,7 +222,12 @@ class DataTransformer:
             result = daily_counts.resample('W-SUN').sum()
         elif freq == 'M':
             # Monthly aggregation (end of month)
-            result = daily_counts.resample('ME').sum()
+            # Use 'M' for pandas <2.0 compatibility, pandas will handle it
+            try:
+                result = daily_counts.resample('ME').sum()
+            except ValueError:
+                # Fallback for older pandas versions
+                result = daily_counts.resample('M').sum()
         else:
             raise ValueError(f"Invalid frequency: {freq}. Use 'D', 'W', or 'M'.")
 

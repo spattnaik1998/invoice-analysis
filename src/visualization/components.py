@@ -75,6 +75,10 @@ class DashboardComponents:
             y_label (str): Y-axis label
             color (str): Line color
         """
+        if data.empty:
+            st.info("No data available for the selected filters")
+            return
+
         fig = px.line(
             data,
             x=x_col,
@@ -126,6 +130,10 @@ class DashboardComponents:
             orientation (str): 'h' for horizontal, 'v' for vertical
             color_scale (str): Plotly color scale name
         """
+        if data.empty:
+            st.info("No data available for the selected filters")
+            return
+
         fig = px.bar(
             data,
             x=x_col if orientation == 'v' else y_col,
@@ -178,7 +186,7 @@ class DashboardComponents:
             color (str): Fill color (default: #4A90E2 - light blue)
         """
         if data.empty:
-            st.warning("No data available for the selected filters.")
+            st.info("No data available for the selected filters")
             return
 
         fig = px.area(
@@ -242,6 +250,10 @@ class DashboardComponents:
             y_label (str): Y-axis label
             color_scale (str): Plotly color scale name
         """
+        if data.empty:
+            st.info("No data available for the selected filters")
+            return
+
         fig = go.Figure(data=go.Heatmap(
             z=data.values,
             x=data.columns,
@@ -290,7 +302,7 @@ class DashboardComponents:
         """
         # Handle empty data
         if data.empty:
-            st.warning("No data available for the selected filters.")
+            st.info("No data available for the selected filters")
             return
 
         # Create the line chart with custom hover template
@@ -362,7 +374,7 @@ class DashboardComponents:
         """
         # Handle empty data
         if data.empty:
-            st.warning("No data available for the selected filters.")
+            st.info("No data available for the selected filters")
             return
 
         # Create the line chart with custom hover template
@@ -435,7 +447,7 @@ class DashboardComponents:
             dict: Event data from st.plotly_chart for click handling, or None if data is empty
         """
         if data.empty:
-            st.warning("No product data available for the selected filters.")
+            st.info("No product data available for the selected filters")
             return None
 
         # Sort ascending for horizontal bar display (bottom to top)

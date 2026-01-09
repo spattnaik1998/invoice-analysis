@@ -51,6 +51,7 @@ Layer 3 - Visualization (src/visualization/components.py + app.py):
 import streamlit as st
 from pathlib import Path
 import sys
+from typing import Optional
 
 # Add src to Python path for imports
 sys.path.append(str(Path(__file__).parent))
@@ -71,7 +72,7 @@ st.set_page_config(
 
 
 @st.cache_data(ttl=3600)
-def load_and_prepare_data():
+def load_and_prepare_data() -> DataTransformer:
     """
     Load and prepare data with caching for performance.
 
@@ -84,7 +85,7 @@ def load_and_prepare_data():
     return transformer
 
 
-def initialize_session_state():
+def initialize_session_state() -> None:
     """
     Initialize session state for filter management.
 
@@ -98,12 +99,64 @@ def initialize_session_state():
         st.session_state.filter_source = 'sidebar'
 
 
-def main():
+def render_section_header(icon: str, title: str, description: Optional[str] = None) -> None:
+    """
+    Render a consistent section header with icon and description.
+
+    Args:
+        icon (str): Emoji icon for the section
+        title (str): Section title
+        description (str, optional): Brief description of the section
+    """
+    st.markdown(f"## {icon} {title}")
+    if description:
+        st.markdown(f"*{description}*")
+    st.markdown("")  # Add spacing
+
+
+def main() -> None:
     """
     Main application function.
     """
     # Initialize session state for filter management
     initialize_session_state()
+
+    # Custom CSS for professional styling
+    st.markdown("""
+        <style>
+        /* Section headers */
+        h2 {
+            padding-top: 2rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 1rem;
+        }
+
+        /* Subsection headers */
+        h3 {
+            color: #1f4e78;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Info boxes */
+        [data-testid="stInfo"] {
+            background-color: #f8f9fa;
+            border-left: 4px solid #4a90e2;
+        }
+
+        /* KPI cards spacing */
+        [data-testid="stMetricValue"] {
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        /* Consistent spacing */
+        .stMarkdown {
+            margin-bottom: 0.5rem;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
     # Header
     st.title(f"{APP_ICON} {APP_TITLE}")
@@ -172,17 +225,13 @@ def main():
             selected_years
         ).filter_by_products(selected_products)
 
-        # Display data info in sidebar
-        st.sidebar.markdown("---")
-        st.sidebar.subheader("Dataset Info")
+        # Get KPIs for display
         kpis = filtered_transformer.get_kpis()
-        st.sidebar.info(
-            f"**Filtered Records:** {format_number(kpis['num_transactions'])}\n\n"
-            f"**Unique Customers:** {format_number(kpis['unique_customers'])}\n\n"
-            f"**Unique Products:** {format_number(kpis['unique_products'])}"
-        )
 
-        # KPI Section
+        # ========================================
+        # KPI CARDS SECTION
+        # ========================================
+        st.markdown("<br>", unsafe_allow_html=True)
         st.header("Key Performance Indicators")
         kpi_col1, kpi_col2, kpi_col3, kpi_col4 = st.columns(4)
 
@@ -214,48 +263,71 @@ def main():
                 format_string="{:,.0f}"
             )
 
+        # Dataset info below KPIs
         st.markdown("---")
+        info_col1, info_col2, info_col3 = st.columns(3)
 
-        # Visualizations Section
-        st.header("Visualizations")
-
-        # Yearly Revenue Trend Chart
-        st.subheader("📈 Yearly Revenue Trend")
-        yearly_revenue_data = filtered_transformer.get_yearly_revenue()
-
-        if not yearly_revenue_data.empty:
-            DashboardComponents.render_revenue_trend_chart(
-                data=yearly_revenue_data,
-                x_col='invoice_year',
-                y_col='total_revenue',
-                title='Revenue Trend Over Time'
-            )
-        else:
-            st.warning("No revenue data available for the selected filters.")
+        with info_col1:
+            st.metric("Filtered Records", format_number(kpis['num_transactions']))
+        with info_col2:
+            st.metric("Unique Customers", format_number(kpis['unique_customers']))
+        with info_col3:
+            st.metric("Unique Products", format_number(kpis['unique_products']))
 
         st.markdown("---")
+        st.markdown("<br>", unsafe_allow_html=True)
 
-        # Yearly Quantity Sold Trend Chart
-        st.subheader("📊 Yearly Quantity Sold Trend")
-        yearly_quantity_data = filtered_transformer.get_yearly_quantity()
+        # ========================================
+        # SECTION 1: REVENUE & QUANTITY TRENDS
+        # ========================================
+        render_section_header(
+            "📊",
+            "Revenue & Quantity Trends",
+            "Historical performance over time"
+        )
 
-        if not yearly_quantity_data.empty:
-            DashboardComponents.render_quantity_trend_chart(
-                data=yearly_quantity_data,
-                x_col='invoice_year',
-                y_col='total_quantity',
-                title='Quantity Sold Trend Over Time'
-            )
-        else:
-            st.warning("No quantity data available for the selected filters.")
+        col1, col2 = st.columns(2)
 
-        st.markdown("---")
+        with col1:
+            st.markdown("### Revenue Over Time")
+            yearly_revenue_data = filtered_transformer.get_yearly_revenue()
+            if not yearly_revenue_data.empty:
+                DashboardComponents.render_revenue_trend_chart(
+                    data=yearly_revenue_data,
+                    x_col='invoice_year',
+                    y_col='total_revenue',
+                    title='Revenue Trend Over Time'
+                )
+            else:
+                st.info("No revenue data for selected filters")
 
-        # Top 10 Products by Revenue with Click-to-Filter
-        st.subheader("🏆 Top 10 Products by Revenue")
+        with col2:
+            st.markdown("### Quantity Sold Over Time")
+            yearly_quantity_data = filtered_transformer.get_yearly_quantity()
+            if not yearly_quantity_data.empty:
+                DashboardComponents.render_quantity_trend_chart(
+                    data=yearly_quantity_data,
+                    x_col='invoice_year',
+                    y_col='total_quantity',
+                    title='Quantity Sold Trend Over Time'
+                )
+            else:
+                st.info("No quantity data for selected filters")
 
-        # User guidance
-        st.info("💡 Click on any bar to filter the entire dashboard to that product. Use the sidebar button to clear the filter.")
+        st.markdown("<br><br>", unsafe_allow_html=True)
+
+        # ========================================
+        # SECTION 2: PRODUCT ANALYSIS
+        # ========================================
+        render_section_header(
+            "🏷️",
+            "Product Analysis",
+            "Performance breakdown by product"
+        )
+
+        # Top 10 Products
+        st.markdown("### Top 10 Products by Revenue")
+        st.markdown("*💡 Click on any bar to filter the dashboard to that product*")
 
         top_products_data = filtered_transformer.get_top_products(n=10)
 
@@ -279,15 +351,13 @@ def main():
                     except (KeyError, IndexError, ValueError) as e:
                         st.error(f"Error processing click event: {e}")
         else:
-            st.warning("No product data available for the selected filters.")
+            st.info("No product data available for the selected filters")
 
-        st.markdown("---")
+        st.markdown("<br>", unsafe_allow_html=True)
 
-        # Product vs Year Revenue Heatmap
-        st.subheader("🔥 Product Performance Heatmap")
-
-        # User guidance
-        st.info("💡 Explore revenue patterns across all products and years. Darker colors indicate higher revenue.")
+        # Product Heatmap
+        st.markdown("### Product Performance Heatmap")
+        st.markdown("*💡 Explore revenue patterns across all products and years. Darker colors indicate higher revenue*")
 
         heatmap_data = filtered_transformer.get_product_year_heatmap_data()
 
@@ -300,65 +370,12 @@ def main():
                 color_scale='Blues'
             )
         else:
-            st.warning("No heatmap data available for the selected filters.")
+            st.info("No heatmap data available for the selected filters")
 
-        st.markdown("---")
+        st.markdown("<br>", unsafe_allow_html=True)
 
-        # Daily Transaction Volume Chart
-        st.subheader("📊 Transaction Volume Over Time")
-
-        # User guidance
-        st.info(
-            f"💡 Viewing transaction volume at **{aggregation_level.lower()}** level. "
-            "Use the aggregation selector in the sidebar to change granularity. "
-            "Click and drag to zoom, double-click to reset."
-        )
-
-        # Get transaction volume data
-        try:
-            volume_data = filtered_transformer.get_transaction_volume(freq=freq_code)
-
-            if not volume_data.empty:
-                DashboardComponents.render_area_chart(
-                    data=volume_data,
-                    x_col='date',
-                    y_col='volume',
-                    title=f'{aggregation_level} Transaction Volume',
-                    x_label='Date',
-                    y_label='Number of Transactions',
-                    color='#4A90E2'
-                )
-
-                # Show summary statistics
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric(
-                        "Total Transactions",
-                        f"{int(volume_data['volume'].sum()):,}",
-                        help=f"Total transactions in the selected {aggregation_level.lower()} period"
-                    )
-                with col2:
-                    st.metric(
-                        f"Avg {aggregation_level} Volume",
-                        f"{int(volume_data['volume'].mean()):,}",
-                        help=f"Average transactions per {aggregation_level.lower()} period"
-                    )
-                with col3:
-                    st.metric(
-                        f"Peak {aggregation_level}",
-                        f"{int(volume_data['volume'].max()):,}",
-                        help=f"Highest transaction count in a {aggregation_level.lower()} period"
-                    )
-            else:
-                st.warning("No transaction volume data available for the selected filters.")
-        except Exception as e:
-            st.error(f"Error generating transaction volume chart: {str(e)}")
-            st.exception(e)
-
-        st.markdown("---")
-
-        # Product Performance Comparison
-        st.subheader("📈 Product Performance Comparison")
+        # Multi-Product Comparison
+        st.markdown("### Product Comparison")
 
         # User guidance based on number of products
         if len(selected_products) == 1:
@@ -416,9 +433,66 @@ def main():
                     use_container_width=True
                 )
             else:
-                st.warning("No product performance data available for the selected filters.")
+                st.info("No product performance data available for the selected filters")
         except Exception as e:
             st.error(f"Error generating product performance chart: {str(e)}")
+            st.exception(e)
+
+        st.markdown("<br><br>", unsafe_allow_html=True)
+
+        # ========================================
+        # SECTION 3: TRANSACTION VOLUME
+        # ========================================
+        render_section_header(
+            "📈",
+            "Transaction Volume Analysis",
+            "Activity patterns over time"
+        )
+
+        st.markdown(
+            f"*💡 Viewing {aggregation_level.lower()} aggregation. "
+            "Change in sidebar to adjust granularity. Click and drag to zoom, double-click to reset*"
+        )
+
+        # Get transaction volume data
+        try:
+            volume_data = filtered_transformer.get_transaction_volume(freq=freq_code)
+
+            if not volume_data.empty:
+                DashboardComponents.render_area_chart(
+                    data=volume_data,
+                    x_col='date',
+                    y_col='volume',
+                    title=f'{aggregation_level} Transaction Volume',
+                    x_label='Date',
+                    y_label='Number of Transactions',
+                    color='#4A90E2'
+                )
+
+                # Show summary statistics
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric(
+                        "Total Transactions",
+                        f"{int(volume_data['volume'].sum()):,}",
+                        help=f"Total transactions in the selected {aggregation_level.lower()} period"
+                    )
+                with col2:
+                    st.metric(
+                        f"Avg {aggregation_level} Volume",
+                        f"{int(volume_data['volume'].mean()):,}",
+                        help=f"Average transactions per {aggregation_level.lower()} period"
+                    )
+                with col3:
+                    st.metric(
+                        f"Peak {aggregation_level}",
+                        f"{int(volume_data['volume'].max()):,}",
+                        help=f"Highest transaction count in a {aggregation_level.lower()} period"
+                    )
+            else:
+                st.info("No transaction volume data available for the selected filters")
+        except Exception as e:
+            st.error(f"Error generating transaction volume chart: {str(e)}")
             st.exception(e)
 
     except FileNotFoundError as e:
