@@ -19,23 +19,26 @@ APP_TITLE = "Invoice Analytics Dashboard"
 APP_ICON = ":bar_chart:"
 APP_LAYOUT = "wide"
 
-# Color scheme (Professional Blue theme from PRD)
+# Color scheme (Power BI Black and Yellow theme)
 COLORS = {
-    'primary': '#1F4E78',
-    'secondary': '#2E5C8A',
-    'accent': '#4A90E2',
-    'success': '#27AE60',
-    'warning': '#F39C12',
-    'danger': '#E74C3C',
-    'neutral': '#7F8C8D'
+    'primary': '#000000',      # Black
+    'secondary': '#2D2D2D',    # Dark gray
+    'accent': '#FFC000',       # Power BI Yellow/Gold
+    'success': '#27AE60',      # Keep green for positive
+    'warning': '#F39C12',      # Keep orange for warning
+    'danger': '#E74C3C',       # Keep red for negative
+    'neutral': '#7F8C8D',      # Gray
+    'background': '#1C1C1C',   # Very dark gray background
+    'text_light': '#FFFFFF',   # White text
+    'border': '#404040'        # Medium gray for borders
 }
 
-# Chart configuration
+# Chart configuration (kept for compatibility)
 CHART_COLORS = {
-    'line': COLORS['primary'],
-    'bar': 'Blues',
+    'line': COLORS['accent'],
+    'bar': 'YlOrBr',
     'area': COLORS['accent'],
-    'heatmap': 'Blues'
+    'heatmap': 'YlOrBr'
 }
 
 # Performance configuration

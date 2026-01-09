@@ -281,24 +281,25 @@ class DashboardComponents:
         x_col: str = 'invoice_year',
         y_col: str = 'total_revenue',
         title: str = 'Yearly Revenue Trend',
-        color: str = "#1F4E78"
+        color: str = "#FFC000"
     ) -> None:
         """
         Render an interactive revenue trend line chart optimized for time-series data.
 
-        This chart follows time-series visualization best practices:
+        This chart follows time-series visualization best practices with Power BI black/yellow theme:
         - Clear temporal progression on x-axis
         - Appropriate formatting for currency values
         - Interactive tooltips with detailed information
         - Markers to highlight individual data points
         - Responsive design
+        - Power BI dark theme with yellow accent
 
         Args:
             data (pd.DataFrame): Data with year and revenue columns
             x_col (str): Column name for x-axis (year). Defaults to 'invoice_year'
             y_col (str): Column name for y-axis (revenue). Defaults to 'total_revenue'
             title (str): Chart title
-            color (str): Line color
+            color (str): Line color (default: Power BI yellow #FFC000)
         """
         # Handle empty data
         if data.empty:
@@ -314,39 +315,49 @@ class DashboardComponents:
             markers=True
         )
 
-        # Update traces for better visualization
+        # Update traces for Power BI style visualization
         fig.update_traces(
             line_color=color,
-            line_width=3,
-            marker=dict(size=10, line=dict(width=2, color='white')),
+            line_width=4,
+            marker=dict(size=12, line=dict(width=2, color='#000000')),
             hovertemplate='<b>Year: %{x}</b><br>Revenue: $%{y:,.2f}<extra></extra>'
         )
 
-        # Update layout for time-series best practices
+        # Update layout for Power BI black/yellow theme
         fig.update_layout(
             hovermode='x unified',
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            font=dict(family="Arial, sans-serif", size=12),
-            title_font_size=18,
+            plot_bgcolor='#1C1C1C',
+            paper_bgcolor='#000000',
+            font=dict(family="Arial, sans-serif", size=12, color='#FFFFFF'),
+            title_font=dict(size=20, color='#FFC000', family="Arial, sans-serif"),
             title_x=0.05,
             xaxis=dict(
                 title="Year",
+                title_font=dict(color='#FFC000', size=14),
                 showgrid=True,
-                gridcolor='#E5E5E5',
+                gridcolor='#404040',
                 gridwidth=1,
                 dtick=1,  # Show every year
-                tickmode='linear'
+                tickmode='linear',
+                tickfont=dict(color='#FFFFFF')
             ),
             yaxis=dict(
                 title="Total Revenue ($)",
+                title_font=dict(color='#FFC000', size=14),
                 showgrid=True,
-                gridcolor='#E5E5E5',
+                gridcolor='#404040',
                 gridwidth=1,
                 tickformat='$,.0f',  # Format as currency
-                rangemode='tozero'  # Start from zero for revenue
+                rangemode='tozero',  # Start from zero for revenue
+                tickfont=dict(color='#FFFFFF')
             ),
-            margin=dict(l=60, r=30, t=60, b=60)
+            margin=dict(l=60, r=30, t=60, b=60),
+            hoverlabel=dict(
+                bgcolor='#2D2D2D',
+                font_size=13,
+                font_family="Arial, sans-serif",
+                font_color='#FFFFFF'
+            )
         )
 
         st.plotly_chart(fig, use_container_width=True)
@@ -357,20 +368,20 @@ class DashboardComponents:
         x_col: str = 'invoice_year',
         y_col: str = 'total_quantity',
         title: str = 'Yearly Quantity Sold Trend',
-        color: str = "#27AE60"
+        color: str = "#FFD740"
     ) -> None:
         """
         Render an interactive quantity sold trend line chart optimized for time-series data.
 
-        This chart follows time-series visualization best practices and is visually
-        distinguished from the revenue chart through color and formatting.
+        This chart follows time-series visualization best practices with Power BI black/yellow theme.
+        Distinguished from revenue chart through a lighter yellow/amber color.
 
         Args:
             data (pd.DataFrame): Data with year and quantity columns
             x_col (str): Column name for x-axis (year). Defaults to 'invoice_year'
             y_col (str): Column name for y-axis (quantity). Defaults to 'total_quantity'
             title (str): Chart title
-            color (str): Line color (default: green #27AE60 to distinguish from revenue)
+            color (str): Line color (default: Light yellow #FFD740 to distinguish from revenue)
         """
         # Handle empty data
         if data.empty:
@@ -386,39 +397,49 @@ class DashboardComponents:
             markers=True
         )
 
-        # Update traces for better visualization (distinct from revenue chart)
+        # Update traces for Power BI style visualization
         fig.update_traces(
             line_color=color,
-            line_width=3,
-            marker=dict(size=10, line=dict(width=2, color='white')),
+            line_width=4,
+            marker=dict(size=12, line=dict(width=2, color='#000000')),
             hovertemplate='<b>Year: %{x}</b><br>Quantity: %{y:,} units<extra></extra>'
         )
 
-        # Update layout for time-series best practices
+        # Update layout for Power BI black/yellow theme
         fig.update_layout(
             hovermode='x unified',
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            font=dict(family="Arial, sans-serif", size=12),
-            title_font_size=18,
+            plot_bgcolor='#1C1C1C',
+            paper_bgcolor='#000000',
+            font=dict(family="Arial, sans-serif", size=12, color='#FFFFFF'),
+            title_font=dict(size=20, color='#FFC000', family="Arial, sans-serif"),
             title_x=0.05,
             xaxis=dict(
                 title="Year",
+                title_font=dict(color='#FFC000', size=14),
                 showgrid=True,
-                gridcolor='#E5E5E5',
+                gridcolor='#404040',
                 gridwidth=1,
                 dtick=1,  # Show every year
-                tickmode='linear'
+                tickmode='linear',
+                tickfont=dict(color='#FFFFFF')
             ),
             yaxis=dict(
                 title="Total Quantity Sold (units)",
+                title_font=dict(color='#FFC000', size=14),
                 showgrid=True,
-                gridcolor='#E5E5E5',
+                gridcolor='#404040',
                 gridwidth=1,
                 tickformat=',',  # Format with thousand separators
-                rangemode='tozero'  # Start from zero for quantity
+                rangemode='tozero',  # Start from zero for quantity
+                tickfont=dict(color='#FFFFFF')
             ),
-            margin=dict(l=60, r=30, t=60, b=60)
+            margin=dict(l=60, r=30, t=60, b=60),
+            hoverlabel=dict(
+                bgcolor='#2D2D2D',
+                font_size=13,
+                font_family="Arial, sans-serif",
+                font_color='#FFFFFF'
+            )
         )
 
         st.plotly_chart(fig, use_container_width=True)
@@ -630,3 +651,175 @@ class DashboardComponents:
         )
 
         return selected_years, selected_products
+
+    @staticmethod
+    def render_button_filters(
+        transformer,
+        available_years: List[int],
+        available_products: List[int]
+    ) -> tuple:
+        """
+        Render Power BI-style button filters in a horizontal filter bar.
+
+        This method creates toggle button filters for years, products, and aggregation level,
+        replacing the traditional dropdown filters with a more interactive button-based interface.
+
+        Args:
+            transformer: DataTransformer instance (used to get top products)
+            available_years (List[int]): List of available years
+            available_products (List[int]): List of available product IDs
+
+        Returns:
+            tuple: (selected_years, selected_products, aggregation_level)
+        """
+        # Initialize session state for button filters
+        if 'selected_years' not in st.session_state:
+            st.session_state.selected_years = available_years.copy()
+        if 'selected_products' not in st.session_state:
+            st.session_state.selected_products = available_products.copy()
+        if 'aggregation_level' not in st.session_state:
+            st.session_state.aggregation_level = 'Daily'
+        if 'show_all_products' not in st.session_state:
+            st.session_state.show_all_products = False
+
+        # Filter Bar Container
+        st.markdown('<div class="filter-bar">', unsafe_allow_html=True)
+
+        # === YEAR FILTER SECTION ===
+        st.markdown('<div class="filter-section">', unsafe_allow_html=True)
+        year_count = len(st.session_state.selected_years)
+        st.markdown(
+            f'<div class="filter-section-label">Year Range <span class="filter-selection-count">({year_count} selected)</span></div>',
+            unsafe_allow_html=True
+        )
+
+        # Year buttons - use columns for horizontal layout
+        year_cols = st.columns([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2])
+
+        # "All Years" button
+        with year_cols[0]:
+            if st.button("All Years", key="year_all_btn", use_container_width=True):
+                st.session_state.selected_years = available_years.copy()
+                st.rerun()
+
+        # Individual year buttons (show up to 9 years inline)
+        years_to_show = available_years[:9] if len(available_years) > 9 else available_years
+        for idx, year in enumerate(years_to_show):
+            with year_cols[idx + 1]:
+                is_selected = year in st.session_state.selected_years
+                button_label = f"✓ {year}" if is_selected else str(year)
+
+                # Apply active styling via inline style hack
+                if st.button(button_label, key=f"year_{year}", use_container_width=True):
+                    if is_selected:
+                        # Deselect
+                        if len(st.session_state.selected_years) > 1:  # Keep at least one
+                            st.session_state.selected_years.remove(year)
+                            st.rerun()
+                    else:
+                        # Select
+                        st.session_state.selected_years.append(year)
+                        st.rerun()
+
+        # Clear All Years button
+        with year_cols[10]:
+            clear_col1, clear_col2 = st.columns([1, 1])
+            with clear_col1:
+                if st.button("Clear All", key="year_clear", use_container_width=True):
+                    # Keep at least one year selected
+                    st.session_state.selected_years = [available_years[0]]
+                    st.rerun()
+
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("---")
+
+        # === PRODUCT FILTER SECTION ===
+        st.markdown('<div class="filter-section">', unsafe_allow_html=True)
+        product_count = len(st.session_state.selected_products)
+        st.markdown(
+            f'<div class="filter-section-label">Products <span class="filter-selection-count">({product_count} selected)</span></div>',
+            unsafe_allow_html=True
+        )
+
+        # Get top products for display
+        top_products = transformer.get_top_products_for_filter(n=15)
+        display_products = available_products if st.session_state.show_all_products else top_products
+
+        # Product buttons - 5 per row
+        num_cols = 5
+        num_products = len(display_products)
+        num_rows = (num_products + num_cols - 1) // num_cols
+
+        for row_idx in range(num_rows):
+            prod_cols = st.columns(num_cols)
+            start_idx = row_idx * num_cols
+            end_idx = min(start_idx + num_cols, num_products)
+
+            for col_idx, prod_idx in enumerate(range(start_idx, end_idx)):
+                product_id = display_products[prod_idx]
+                with prod_cols[col_idx]:
+                    is_selected = product_id in st.session_state.selected_products
+                    button_label = f"✓ {product_id}" if is_selected else f"{product_id}"
+
+                    if st.button(button_label, key=f"prod_{product_id}", use_container_width=True):
+                        if is_selected:
+                            # Deselect
+                            if len(st.session_state.selected_products) > 1:  # Keep at least one
+                                st.session_state.selected_products.remove(product_id)
+                                st.rerun()
+                        else:
+                            # Select
+                            st.session_state.selected_products.append(product_id)
+                            st.rerun()
+
+        # Action buttons row
+        action_cols = st.columns([1, 1, 1, 1, 1])
+        with action_cols[0]:
+            if st.button("All Products", key="prod_all_btn", use_container_width=True):
+                st.session_state.selected_products = available_products.copy()
+                st.rerun()
+
+        with action_cols[1]:
+            if st.button("Clear All", key="prod_clear", use_container_width=True):
+                # Keep at least one product
+                st.session_state.selected_products = [available_products[0]]
+                st.rerun()
+
+        with action_cols[2]:
+            toggle_label = "Show Top 15" if st.session_state.show_all_products else "Show All Products"
+            st.markdown('<div class="toggle-visibility-btn">', unsafe_allow_html=True)
+            if st.button(toggle_label, key="prod_toggle", use_container_width=True):
+                st.session_state.show_all_products = not st.session_state.show_all_products
+                st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("---")
+
+        # === AGGREGATION LEVEL SECTION ===
+        st.markdown('<div class="filter-section">', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="filter-section-label">Transaction Volume Aggregation</div>',
+            unsafe_allow_html=True
+        )
+
+        agg_cols = st.columns([1, 1, 1, 7])
+        agg_options = ['Daily', 'Weekly', 'Monthly']
+
+        for idx, option in enumerate(agg_options):
+            with agg_cols[idx]:
+                is_selected = st.session_state.aggregation_level == option
+                button_label = f"✓ {option}" if is_selected else option
+
+                if st.button(button_label, key=f"agg_{option}", use_container_width=True):
+                    st.session_state.aggregation_level = option
+                    st.rerun()
+
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)  # Close filter-bar
+
+        return (
+            st.session_state.selected_years,
+            st.session_state.selected_products,
+            st.session_state.aggregation_level
+        )

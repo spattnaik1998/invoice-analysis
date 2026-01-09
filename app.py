@@ -1,32 +1,24 @@
 """
 Invoice Analytics Dashboard - Main Application
 
-This is the main Streamlit application file that orchestrates the dashboard.
+This is the main Streamlit application file that orchestrates the dashboard with
+Power BI-inspired black and yellow theme.
 
-Technology Stack Justification:
-------------------------------
-Streamlit was chosen for this project because:
+Features:
+---------
+- **Power BI-Style Button Filters**: Interactive toggle buttons for year, product,
+  and aggregation level selection
+- **Dynamic KPI Cards**: 7 key performance indicators that update based on filters
+- **Revenue Trend Analysis**: Interactive line chart showing total revenue over time
+- **Product Quantity Trends**: Interactive line chart showing quantity sold evolution
+- **Black & Yellow Theme**: Professional Power BI-inspired color scheme
 
-1. **Python-Native**: Seamlessly integrates with pandas for data transformation,
-   leveraging the existing invoice_analysis.py exploration work.
-
-2. **Rapid Development**: Built-in widgets, state management, and caching enable
-   fast iteration when building features one at a time.
-
-3. **Performance**: @st.cache_data decorator provides automatic optimization,
-   meeting the PRD requirement of <3s initial load and <500ms filter updates.
-
-4. **Interactive by Default**: All Plotly visualizations are interactive
-   out-of-the-box with zoom, pan, and hover capabilities.
-
-5. **Professional Quality**: Widely used in industry for data analytics dashboards,
-   making it portfolio-worthy for recruiters and hiring managers.
-
-6. **Easy Deployment**: Simple deployment to Streamlit Cloud, Docker, or
-   cloud platforms without complex backend setup.
-
-7. **Meets All PRD Requirements**: Handles multi-select filters, real-time KPI
-   updates, and complex visualizations efficiently.
+Technology Stack:
+-----------------
+- **Streamlit**: Python web framework for data applications
+- **Plotly**: Interactive charting library with dark theme support
+- **Pandas**: Data manipulation and aggregation
+- **Python 3.x**: Core programming language
 
 Architecture:
 -------------
@@ -44,8 +36,16 @@ Layer 2 - Data Transformation (src/data/data_transformer.py):
 
 Layer 3 - Visualization (src/visualization/components.py + app.py):
     - Renders interactive charts using Plotly
-    - Displays KPI cards
-    - Manages user interface and filters
+    - Displays KPI cards with Power BI theme
+    - Manages button-based filters with toggle functionality
+
+Color Scheme:
+-------------
+- Primary: Black (#000000)
+- Accent: Power BI Yellow (#FFC000)
+- Background: Dark Gray (#1C1C1C)
+- Borders: Medium Gray (#404040)
+- Text: White (#FFFFFF)
 """
 
 import streamlit as st
@@ -90,13 +90,131 @@ def initialize_session_state() -> None:
     Initialize session state for filter management.
 
     Session state variables:
-    - selected_products_override: Override sidebar product filter (used for chart clicks)
-    - filter_source: Track if filter came from 'sidebar' or 'chart_click'
+    - selected_years: List of selected years for filtering
+    - selected_products: List of selected product IDs for filtering
+    - aggregation_level: Time granularity for transaction volume ('Daily', 'Weekly', 'Monthly')
+    - show_all_products: Boolean to toggle between top 15 and all products in filter
+    - selected_products_override: Override filter bar product selection (used for chart clicks)
+    - filter_source: Track if filter came from 'filter_bar' or 'chart_click'
     """
+    # Note: selected_years, selected_products, aggregation_level, and show_all_products
+    # are initialized in render_button_filters() with proper defaults based on available data.
+    # We only initialize the override and tracking variables here.
+
     if 'selected_products_override' not in st.session_state:
         st.session_state.selected_products_override = None
     if 'filter_source' not in st.session_state:
-        st.session_state.filter_source = 'sidebar'
+        st.session_state.filter_source = 'filter_bar'
+
+
+def inject_button_filter_css() -> None:
+    """
+    Inject custom CSS for Power BI-style toggle button filters.
+
+    This function adds professional styling for filter buttons with:
+    - Active/inactive states with visual distinction
+    - Hover effects for better UX
+    - Power BI black and yellow color scheme
+    - Filter bar container styling
+    """
+    st.markdown("""
+        <style>
+        /* Filter Bar Container */
+        .filter-bar {
+            background: #000000;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #404040;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px rgba(255, 192, 0, 0.1);
+        }
+
+        /* Filter Section */
+        .filter-section {
+            margin-bottom: 16px;
+        }
+
+        .filter-section-label {
+            font-size: 14px;
+            font-weight: 700;
+            color: #FFC000 !important;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Selection Counter */
+        .filter-selection-count {
+            font-size: 12px;
+            color: #CCCCCC !important;
+            font-style: italic;
+            margin-left: 8px;
+        }
+
+        /* Adjust button base styles */
+        div[data-testid="column"] > div > div > div > button {
+            width: 100%;
+            border-radius: 6px !important;
+            padding: 8px 16px !important;
+            font-weight: 500 !important;
+            border: 2px solid #404040 !important;
+            background: #2D2D2D !important;
+            color: #FFFFFF !important;
+            transition: all 0.2s ease !important;
+            margin-bottom: 8px !important;
+        }
+
+        /* Selected button state (buttons with checkmark ✓) */
+        div[data-testid="column"] > div > div > div > button:has-text("✓"),
+        div[data-testid="column"] > div > div > div > button[aria-label*="✓"] {
+            background: #FFC000 !important;
+            border-color: #FFC000 !important;
+            color: #000000 !important;
+            font-weight: 700 !important;
+            box-shadow: 0 4px 8px rgba(255, 192, 0, 0.4) !important;
+        }
+
+        /* Button hover state */
+        div[data-testid="column"] > div > div > div > button:hover {
+            border-color: #FFC000 !important;
+            background: #404040 !important;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(255, 192, 0, 0.2) !important;
+        }
+
+        /* Selected button hover state */
+        div[data-testid="column"] > div > div > div > button:hover:has-text("✓") {
+            background: #FFD740 !important;
+            border-color: #FFD740 !important;
+        }
+
+        /* Clear All Button Styling */
+        .clear-all-btn > div > div > div > button {
+            background: transparent !important;
+            border: 2px solid #E74C3C !important;
+            color: #E74C3C !important;
+        }
+
+        .clear-all-btn > div > div > div > button:hover {
+            background: #E74C3C !important;
+            color: white !important;
+        }
+
+        /* Show More/Less Button */
+        .toggle-visibility-btn > div > div > div > button {
+            background: transparent !important;
+            border: 2px dashed #FFC000 !important;
+            color: #FFC000 !important;
+            font-weight: 600 !important;
+        }
+
+        .toggle-visibility-btn > div > div > div > button:hover {
+            background: #FFC000 !important;
+            color: #000000 !important;
+            border-style: solid !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
 
 def render_section_header(icon: str, title: str, description: Optional[str] = None) -> None:
@@ -121,49 +239,90 @@ def main() -> None:
     # Initialize session state for filter management
     initialize_session_state()
 
-    # Custom CSS for professional styling
+    # Custom CSS for Power BI black and yellow theme
     st.markdown("""
         <style>
+        /* Main app background */
+        .stApp {
+            background-color: #1C1C1C;
+        }
+
         /* Section headers */
         h2 {
             padding-top: 2rem;
             padding-bottom: 0.5rem;
-            border-bottom: 2px solid #f0f0f0;
+            border-bottom: 2px solid #404040;
             margin-bottom: 1rem;
+            color: #FFC000;
         }
 
         /* Subsection headers */
         h3 {
-            color: #1f4e78;
+            color: #FFC000;
             margin-top: 1rem;
             margin-bottom: 0.5rem;
         }
 
-        /* Info boxes */
-        [data-testid="stInfo"] {
-            background-color: #f8f9fa;
-            border-left: 4px solid #4a90e2;
+        /* Title */
+        h1 {
+            color: #FFFFFF !important;
         }
 
-        /* KPI cards spacing */
+        /* Text color */
+        p, div, span, label {
+            color: #FFFFFF !important;
+        }
+
+        /* Info boxes */
+        [data-testid="stInfo"] {
+            background-color: #2D2D2D;
+            border-left: 4px solid #FFC000;
+            color: #FFFFFF;
+        }
+
+        /* KPI cards styling */
         [data-testid="stMetricValue"] {
-            font-size: 2rem;
-            font-weight: 600;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #FFC000 !important;
+        }
+
+        [data-testid="stMetricLabel"] {
+            color: #FFFFFF !important;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        /* KPI metric containers */
+        [data-testid="metric-container"] {
+            background-color: #000000;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #404040;
+            box-shadow: 0 4px 6px rgba(255, 192, 0, 0.1);
         }
 
         /* Consistent spacing */
         .stMarkdown {
             margin-bottom: 0.5rem;
         }
+
+        /* Horizontal rule */
+        hr {
+            border-color: #404040;
+        }
         </style>
     """, unsafe_allow_html=True)
+
+    # Inject Power BI-style button filter CSS
+    inject_button_filter_css()
 
     # Header
     st.title(f"{APP_ICON} {APP_TITLE}")
     st.markdown(
         """
-        Transform invoice data into actionable business intelligence.
-        Use the filters in the sidebar to explore sales patterns, product performance, and revenue trends.
+        Transform invoice data into actionable business intelligence with Power BI-style analytics.
+        Use the interactive filter buttons below to explore sales patterns, product performance, and revenue trends.
         """
     )
 
@@ -176,40 +335,12 @@ def main() -> None:
         available_years = transformer.get_available_years()
         available_products = transformer.get_available_products()
 
-        # Render filters in sidebar
-        selected_years, selected_products = DashboardComponents.render_filters(
+        # Render Power BI-style button filters
+        selected_years, selected_products, aggregation_level = DashboardComponents.render_button_filters(
+            transformer,
             available_years,
             available_products
         )
-
-        # Apply session state overrides from chart clicks
-        if st.session_state.selected_products_override is not None:
-            selected_products = st.session_state.selected_products_override
-
-            # Show clear filter button
-            if st.sidebar.button("🔄 Clear Product Filter", use_container_width=True):
-                st.session_state.selected_products_override = None
-                st.session_state.filter_source = 'sidebar'
-                st.rerun()
-
-        # Transaction Volume Aggregation Selector
-        st.sidebar.markdown("---")
-        st.sidebar.subheader("Transaction Volume")
-
-        aggregation_level = st.sidebar.selectbox(
-            "Aggregation Level",
-            options=['Daily', 'Weekly', 'Monthly'],
-            index=0,  # Default to Daily
-            help="Select the time granularity for transaction volume analysis"
-        )
-
-        # Map display names to pandas frequency codes
-        aggregation_map = {
-            'Daily': 'D',
-            'Weekly': 'W',
-            'Monthly': 'M'
-        }
-        freq_code = aggregation_map[aggregation_level]
 
         # Validate filter selections
         if not selected_years:
@@ -278,222 +409,50 @@ def main() -> None:
         st.markdown("<br>", unsafe_allow_html=True)
 
         # ========================================
-        # SECTION 1: REVENUE & QUANTITY TRENDS
+        # REVENUE TREND LINE GRAPH
         # ========================================
-        render_section_header(
-            "📊",
-            "Revenue & Quantity Trends",
-            "Historical performance over time"
-        )
+        st.markdown("## 📈 Revenue Trend Over Time")
+        st.markdown("*Track total revenue performance across selected years and products*")
+        st.markdown("<br>", unsafe_allow_html=True)
 
-        col1, col2 = st.columns(2)
+        # Get yearly revenue data based on filtered selections
+        yearly_revenue_data = filtered_transformer.get_yearly_revenue()
 
-        with col1:
-            st.markdown("### Revenue Over Time")
-            yearly_revenue_data = filtered_transformer.get_yearly_revenue()
-            if not yearly_revenue_data.empty:
-                DashboardComponents.render_revenue_trend_chart(
-                    data=yearly_revenue_data,
-                    x_col='invoice_year',
-                    y_col='total_revenue',
-                    title='Revenue Trend Over Time'
-                )
-            else:
-                st.info("No revenue data for selected filters")
-
-        with col2:
-            st.markdown("### Quantity Sold Over Time")
-            yearly_quantity_data = filtered_transformer.get_yearly_quantity()
-            if not yearly_quantity_data.empty:
-                DashboardComponents.render_quantity_trend_chart(
-                    data=yearly_quantity_data,
-                    x_col='invoice_year',
-                    y_col='total_quantity',
-                    title='Quantity Sold Trend Over Time'
-                )
-            else:
-                st.info("No quantity data for selected filters")
-
-        st.markdown("<br><br>", unsafe_allow_html=True)
-
-        # ========================================
-        # SECTION 2: PRODUCT ANALYSIS
-        # ========================================
-        render_section_header(
-            "🏷️",
-            "Product Analysis",
-            "Performance breakdown by product"
-        )
-
-        # Top 10 Products
-        st.markdown("### Top 10 Products by Revenue")
-        st.markdown("*💡 Click on any bar to filter the dashboard to that product*")
-
-        top_products_data = filtered_transformer.get_top_products(n=10)
-
-        if not top_products_data.empty:
-            event = DashboardComponents.render_top_products_bar_chart(
-                data=top_products_data,
-                title='Top 10 Products by Total Revenue'
+        if not yearly_revenue_data.empty:
+            DashboardComponents.render_revenue_trend_chart(
+                data=yearly_revenue_data,
+                x_col='invoice_year',
+                y_col='total_revenue',
+                title='Total Revenue by Year',
+                color='#FFC000'  # Power BI yellow
             )
-
-            # Handle click event
-            if event and event.get('selection') and event['selection'].get('points'):
-                points = event['selection']['points']
-                if len(points) > 0:
-                    try:
-                        clicked_product_id = int(points[0]['customdata'][0])
-
-                        # Update session state to filter by clicked product
-                        st.session_state.selected_products_override = [clicked_product_id]
-                        st.session_state.filter_source = 'chart_click'
-                        st.rerun()
-                    except (KeyError, IndexError, ValueError) as e:
-                        st.error(f"Error processing click event: {e}")
         else:
-            st.info("No product data available for the selected filters")
+            st.info("No revenue data available for the selected filters")
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Product Heatmap
-        st.markdown("### Product Performance Heatmap")
-        st.markdown("*💡 Explore revenue patterns across all products and years. Darker colors indicate higher revenue*")
-
-        heatmap_data = filtered_transformer.get_product_year_heatmap_data()
-
-        if not heatmap_data.empty:
-            DashboardComponents.render_heatmap(
-                data=heatmap_data,
-                title='Revenue by Product and Year',
-                x_label='Year',
-                y_label='Product ID',
-                color_scale='Blues'
-            )
-        else:
-            st.info("No heatmap data available for the selected filters")
-
+        # ========================================
+        # PRODUCT QUANTITY TREND LINE GRAPH
+        # ========================================
+        st.markdown("## 📦 Product Quantity Trend Over Time")
+        st.markdown("*Monitor total quantity sold evolution across selected years and products*")
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Multi-Product Comparison
-        st.markdown("### Product Comparison")
+        # Get yearly quantity data based on filtered selections
+        yearly_quantity_data = filtered_transformer.get_yearly_quantity()
 
-        # User guidance based on number of products
-        if len(selected_products) == 1:
-            st.info("💡 Viewing performance for a single product. Select multiple products in the sidebar to compare.")
-        elif len(selected_products) <= 10:
-            st.info(
-                f"💡 Comparing {len(selected_products)} products. "
-                "Click legend items to hide/show products. Double-click to isolate a single product."
+        if not yearly_quantity_data.empty:
+            DashboardComponents.render_quantity_trend_chart(
+                data=yearly_quantity_data,
+                x_col='invoice_year',
+                y_col='total_quantity',
+                title='Total Quantity Sold by Year',
+                color='#FFD740'  # Light yellow/amber to distinguish from revenue
             )
         else:
-            st.info(
-                f"💡 Comparing {len(selected_products)} products. "
-                "Chart may be cluttered - consider filtering to fewer products for clarity. "
-                "Use the legend to toggle products on/off."
-            )
+            st.info("No quantity data available for the selected filters")
 
-        # Get multi-product performance data
-        try:
-            product_performance_data = filtered_transformer.get_multi_product_performance(
-                product_ids=selected_products
-            )
-
-            if not product_performance_data.empty:
-                DashboardComponents.render_multi_product_line_chart(
-                    data=product_performance_data,
-                    title='Yearly Revenue by Product',
-                    y_metric='revenue'
-                )
-
-                # Show summary for selected products
-                st.markdown("### Product Summary")
-
-                # Calculate per-product totals
-                product_totals = product_performance_data.groupby('product_id')['revenue'].agg([
-                    ('total_revenue', 'sum'),
-                    ('avg_yearly_revenue', 'mean'),
-                    ('years_active', 'count')
-                ]).reset_index()
-
-                product_totals = product_totals.sort_values('total_revenue', ascending=False)
-
-                # Display as table
-                product_totals['total_revenue'] = product_totals['total_revenue'].apply(
-                    lambda x: f"${x:,.2f}"
-                )
-                product_totals['avg_yearly_revenue'] = product_totals['avg_yearly_revenue'].apply(
-                    lambda x: f"${x:,.2f}"
-                )
-
-                product_totals.columns = ['Product ID', 'Total Revenue', 'Avg Yearly Revenue', 'Years Active']
-
-                st.dataframe(
-                    product_totals,
-                    hide_index=True,
-                    use_container_width=True
-                )
-            else:
-                st.info("No product performance data available for the selected filters")
-        except Exception as e:
-            st.error(f"Error generating product performance chart: {str(e)}")
-            st.exception(e)
-
-        st.markdown("<br><br>", unsafe_allow_html=True)
-
-        # ========================================
-        # SECTION 3: TRANSACTION VOLUME
-        # ========================================
-        render_section_header(
-            "📈",
-            "Transaction Volume Analysis",
-            "Activity patterns over time"
-        )
-
-        st.markdown(
-            f"*💡 Viewing {aggregation_level.lower()} aggregation. "
-            "Change in sidebar to adjust granularity. Click and drag to zoom, double-click to reset*"
-        )
-
-        # Get transaction volume data
-        try:
-            volume_data = filtered_transformer.get_transaction_volume(freq=freq_code)
-
-            if not volume_data.empty:
-                DashboardComponents.render_area_chart(
-                    data=volume_data,
-                    x_col='date',
-                    y_col='volume',
-                    title=f'{aggregation_level} Transaction Volume',
-                    x_label='Date',
-                    y_label='Number of Transactions',
-                    color='#4A90E2'
-                )
-
-                # Show summary statistics
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric(
-                        "Total Transactions",
-                        f"{int(volume_data['volume'].sum()):,}",
-                        help=f"Total transactions in the selected {aggregation_level.lower()} period"
-                    )
-                with col2:
-                    st.metric(
-                        f"Avg {aggregation_level} Volume",
-                        f"{int(volume_data['volume'].mean()):,}",
-                        help=f"Average transactions per {aggregation_level.lower()} period"
-                    )
-                with col3:
-                    st.metric(
-                        f"Peak {aggregation_level}",
-                        f"{int(volume_data['volume'].max()):,}",
-                        help=f"Highest transaction count in a {aggregation_level.lower()} period"
-                    )
-            else:
-                st.info("No transaction volume data available for the selected filters")
-        except Exception as e:
-            st.error(f"Error generating transaction volume chart: {str(e)}")
-            st.exception(e)
+        st.markdown("<br>", unsafe_allow_html=True)
 
     except FileNotFoundError as e:
         st.error(f"Error: {str(e)}")

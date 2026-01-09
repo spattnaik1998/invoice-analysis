@@ -1,10 +1,13 @@
 # Invoice Analytics Dashboard
 
-A professional, interactive analytics dashboard that transforms invoice data into actionable business intelligence. Built as a portfolio project to demonstrate data visualization expertise, analytical thinking, and full-stack development proficiency.
+A professional, Power BI-inspired analytics dashboard that transforms invoice data into actionable business intelligence. Features an interactive black and yellow theme with dynamic button filters and real-time visualizations.
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red.svg)
+![Plotly](https://img.shields.io/badge/Plotly-5.17+-yellow.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
+
+![Dashboard Preview](https://img.shields.io/badge/Theme-Power%20BI%20Black%20%26%20Yellow-FFC000.svg)
 
 ---
 
@@ -26,41 +29,43 @@ A professional, interactive analytics dashboard that transforms invoice data int
 
 ## Overview
 
-The Invoice Analytics Dashboard provides comprehensive insights into historical invoice data spanning from 1970 to the present. It enables users to analyze sales patterns, product performance, and revenue trends through interactive visualizations and dynamic filtering capabilities.
+The Invoice Analytics Dashboard provides comprehensive insights into historical invoice data spanning from 1970 to the present. Built with a **Power BI-inspired black and yellow theme**, it enables users to analyze sales patterns, product performance, and revenue trends through interactive visualizations and dynamic button-based filtering.
 
 ### Key Capabilities
 
-- **Real-time Filtering**: Multi-select year and product filters that update all visualizations instantly
-- **Key Performance Indicators**: Track total revenue, quantity sold, average transaction value, and transaction count
-- **Interactive Visualizations**: Explore data through line charts, bar charts, heatmaps, and area charts
-- **Professional Design**: Clean, modern interface following industry best practices
+- **Power BI-Style Button Filters**: Interactive toggle buttons for years, products, and aggregation levels
+- **Dynamic KPI Cards**: 7 real-time performance indicators with black/yellow theme
+- **Revenue Trend Analysis**: Interactive line chart showing total revenue evolution over time
+- **Product Quantity Trends**: Track quantity sold evolution with visual trend analysis
+- **Professional Power BI Design**: Black background with yellow accents for modern, striking appearance
 - **Performance Optimized**: Sub-second filter updates and <3 second initial load time
 
 ---
 
 ## Features
 
-### Current Features (v0.1 - Scaffold)
+### Current Features (v2.0 - Power BI Theme)
 
-- ✅ Clean three-layer architecture (Data Loading → Transformation → Visualization)
-- ✅ Data loading with schema validation
-- ✅ Derived field calculations (total_amount, invoice_year, full_name)
-- ✅ Interactive filters (Year and Product multi-select)
-- ✅ Four KPI cards with real-time updates
-- ✅ Reusable visualization components
-- ✅ Performance-optimized with caching
+- ✅ **Power BI Black & Yellow Theme**: Professional dark theme with yellow accents
+- ✅ **Interactive Button Filters**: Toggle buttons for year, product, and aggregation selection
+- ✅ **7 Dynamic KPI Cards**: Real-time metrics with Power BI styling
+  - Total Revenue, Total Quantity Sold, Avg Transaction Value, Number of Transactions
+  - Filtered Records, Unique Customers, Unique Products
+- ✅ **Revenue Trend Line Chart**: Interactive visualization showing total revenue over time
+- ✅ **Product Quantity Trend Chart**: Track quantity sold evolution with yellow/amber line
+- ✅ **Multi-Select Filters**: Select multiple years and products simultaneously
+- ✅ **Top 15 Products Display**: Smart filtering to show top-selling products
+- ✅ **Clean Architecture**: Three-layer design (Data Loading → Transformation → Visualization)
+- ✅ **Performance Optimized**: Caching and efficient data processing
 
-### Upcoming Features
+### Color Scheme
 
-- 📊 Yearly Revenue Trend Line Chart
-- 📊 Yearly Quantity Sold Trend Line Chart
-- 📊 Top 10 Products by Revenue (Bar Chart)
-- 📊 Product Performance Heatmap (Year × Product ID)
-- 📊 Daily Transaction Volume (Area Chart with zoom/pan)
-- 📊 Product-Specific Performance Line Chart
-- 📈 Percentage change calculations for KPIs
-- 📱 Mobile-responsive design
-- ♿ WCAG 2.1 AA accessibility compliance
+- **Primary**: Black (#000000)
+- **Accent**: Power BI Yellow (#FFC000)
+- **Light Accent**: Amber (#FFD740)
+- **Background**: Dark Gray (#1C1C1C)
+- **Borders**: Medium Gray (#404040)
+- **Text**: White (#FFFFFF)
 
 ---
 
@@ -277,19 +282,29 @@ The dashboard will open in your default web browser at `http://localhost:8501`.
 
 ### Using the Dashboard
 
-1. **Filters (Sidebar)**:
-   - **Year Range**: Select one or more years to filter data
-   - **Products**: Select one or more product IDs (100-199)
-   - Filters update all visualizations and KPIs in real-time
+1. **Power BI-Style Button Filters** (Top of Dashboard):
+   - **Year Range**: Click year buttons to toggle selection (yellow = selected)
+   - **Products**: Click product buttons to select (shows top 15 by default)
+   - **Show All Products**: Expand to see all 100 products
+   - **Aggregation Level**: Select Daily, Weekly, or Monthly
+   - **Quick Actions**: "All Years", "All Products", and "Clear All" buttons
+   - Filters update all visualizations and KPIs instantly
 
-2. **Key Performance Indicators**:
-   - **Total Revenue**: Sum of all transaction amounts
+2. **Key Performance Indicators** (7 Cards):
+   - **Total Revenue**: Sum of all transaction amounts (yellow value)
    - **Total Quantity Sold**: Sum of quantities across all transactions
    - **Avg Transaction Value**: Average revenue per transaction
    - **Number of Transactions**: Count of invoice records
+   - **Filtered Records**: Number of records matching current filters
+   - **Unique Customers**: Count of distinct customers
+   - **Unique Products**: Count of distinct products
 
-3. **Visualizations** (Coming in future iterations):
-   - Yearly trends, top products, heatmaps, and more
+3. **Interactive Visualizations**:
+   - **Revenue Trend Chart**: Yellow line showing revenue over time
+   - **Quantity Trend Chart**: Amber line showing quantity sold evolution
+   - Both charts update dynamically based on filter selections
+   - Hover over data points for detailed information
+   - Dark background with yellow accents for Power BI aesthetic
 
 ### Stopping the Application
 
@@ -338,37 +353,34 @@ Press `Ctrl+C` in the terminal to stop the Streamlit server.
 
 ## Development Roadmap
 
-### Phase 1: Foundation ✅ (Current)
+### Phase 1: Foundation ✅ COMPLETE
 - [x] Project structure setup
 - [x] Data loading and validation
 - [x] Data transformation pipeline
 - [x] Filter components
 - [x] KPI cards with real-time calculations
 
-### Phase 2: Core Visualizations (Next)
-- [ ] Yearly Revenue Trend Line Chart
-- [ ] Yearly Quantity Sold Trend Line Chart
-- [ ] Top 10 Products by Revenue (Bar Chart)
+### Phase 2: Power BI Theme & Button Filters ✅ COMPLETE
+- [x] Black and yellow Power BI color scheme
+- [x] Interactive toggle button filters
+- [x] Top 15 products smart filtering
+- [x] Multi-select capability for years and products
+- [x] Dynamic filter state management
 
-### Phase 3: Advanced Visualizations
-- [ ] Product Performance Heatmap
-- [ ] Daily Transaction Volume (Area Chart)
-- [ ] Product-Specific Performance Line Chart
-- [ ] KPI percentage change calculations
+### Phase 3: Core Visualizations ✅ COMPLETE
+- [x] Yearly Revenue Trend Line Chart (Yellow theme)
+- [x] Yearly Quantity Sold Trend Line Chart (Amber theme)
+- [x] Dark theme Plotly charts with yellow accents
+- [x] Interactive hover tooltips
 
-### Phase 4: Polish & Optimization
+### Phase 4: Future Enhancements (Optional)
+- [ ] Additional chart types (heatmaps, bar charts)
 - [ ] Responsive design (mobile, tablet, desktop)
 - [ ] Accessibility improvements (WCAG 2.1 AA)
-- [ ] Performance testing and optimization
-- [ ] Error handling enhancements
-
-### Phase 5: Future Enhancements (Optional)
+- [ ] KPI percentage change calculations
+- [ ] Export functionality (PDF/PowerPoint reports)
 - [ ] Predictive analytics (ARIMA, Prophet)
 - [ ] Customer segmentation (RFM analysis)
-- [ ] Advanced filtering (date range picker, revenue range)
-- [ ] Drill-down capability (yearly → quarterly → monthly → daily)
-- [ ] Data upload functionality
-- [ ] PDF/PowerPoint report export
 
 ---
 
@@ -409,8 +421,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - Built following the comprehensive Product Requirements Document (PRD)
-- Inspired by modern business intelligence dashboards
-- Color palette based on professional blue theme from PRD recommendations
+- Inspired by **Microsoft Power BI** dashboard aesthetics
+- Color palette: Power BI black and yellow theme
+- Interactive filters modeled after Power BI filter chips/buttons
 
 ---
 

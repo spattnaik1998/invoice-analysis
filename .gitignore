@@ -72,3 +72,17 @@ htmlcov/
 *.tmp
 *.bak
 *.cache
+
+# Windows reserved filenames (cannot be used on Windows)
+nul
+NUL
+CON
+PRN
+AUX
+COM1
+COM2
+COM3
+COM4
+LPT1
+LPT2
+LPT3

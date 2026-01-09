@@ -147,6 +147,22 @@ class DataTransformer:
         top_products.columns = ['product_id', 'total_revenue']
         return top_products.nlargest(n, 'total_revenue')
 
+    def get_top_products_for_filter(self, n: int = 15) -> List[int]:
+        """
+        Get top N product IDs by total revenue for filter button display.
+
+        This method is used to limit the number of product buttons shown
+        in the filter bar, displaying only the top-selling products.
+
+        Args:
+            n (int): Number of top products to return (default: 15)
+
+        Returns:
+            List[int]: Sorted list of product IDs ordered by revenue (highest first)
+        """
+        top = self.get_top_products(n)
+        return top['product_id'].tolist()
+
     def get_product_year_heatmap_data(self) -> pd.DataFrame:
         """
         Get product-year revenue data for heatmap visualization.
