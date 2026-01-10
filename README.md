@@ -37,6 +37,7 @@ The Invoice Analytics Dashboard provides comprehensive insights into historical 
 - **Dynamic KPI Cards**: 7 real-time performance indicators with black/yellow theme
 - **Revenue Trend Analysis**: Interactive line chart showing total revenue evolution over time
 - **Product Quantity Trends**: Track quantity sold evolution with visual trend analysis
+- **Revenue Forecasting**: ARIMA and LSTM models for predictions with multiple time horizons and model comparison
 - **Professional Power BI Design**: Black background with yellow accents for modern, striking appearance
 - **Performance Optimized**: Sub-second filter updates and <3 second initial load time
 
@@ -44,8 +45,9 @@ The Invoice Analytics Dashboard provides comprehensive insights into historical 
 
 ## Features
 
-### Current Features (v2.0 - Power BI Theme)
+### Current Features (v3.0 - With ARIMA & LSTM Forecasting)
 
+**Main Dashboard Tab:**
 - ✅ **Power BI Black & Yellow Theme**: Professional dark theme with yellow accents
 - ✅ **Interactive Button Filters**: Toggle buttons for year, product, and aggregation selection
 - ✅ **7 Dynamic KPI Cards**: Real-time metrics with Power BI styling
@@ -55,8 +57,29 @@ The Invoice Analytics Dashboard provides comprehensive insights into historical 
 - ✅ **Product Quantity Trend Chart**: Track quantity sold evolution with yellow/amber line
 - ✅ **Multi-Select Filters**: Select multiple years and products simultaneously
 - ✅ **Top 15 Products Display**: Smart filtering to show top-selling products
+
+**ARIMA Forecasting Tab:**
+- ✅ **ARIMA Model Integration**: Trained ARIMA(0,0,0) model for baseline revenue predictions
+- ✅ **Multiple Forecast Horizons**: 30 days, 90 days, 6 months, 1 year, 2 years, or custom
+- ✅ **Interactive Visualizations**: Historical + forecast line chart with Power BI theme
+- ✅ **Aggregated Forecasts**: Monthly and yearly revenue projections
+- ✅ **Forecast Statistics**: Total revenue, average daily revenue, std deviation
+- ✅ **Data Tables**: First and last 10 days of forecast period
+- ✅ **Model Information**: Detailed ARIMA model specifications and metrics
+
+**LSTM Forecasting Tab (NEW):**
+- ✅ **Deep Learning Model**: LSTM neural network for advanced pattern recognition
+- ✅ **60-Day Look-back**: Sequential learning from 60-day historical patterns
+- ✅ **Model Comparison**: Side-by-side LSTM vs ARIMA visualization
+- ✅ **Comparative Statistics**: Absolute and percentage differences between models
+- ✅ **Advanced Forecasts**: Non-linear pattern detection and trend analysis
+- ✅ **Toggle Comparison**: Enable/disable ARIMA overlay for comparison
+- ✅ **Same Horizon Options**: 30 days to 2 years with custom settings
+
+**Architecture & Performance:**
 - ✅ **Clean Architecture**: Three-layer design (Data Loading → Transformation → Visualization)
 - ✅ **Performance Optimized**: Caching and efficient data processing
+- ✅ **Model Caching**: ARIMA model cached for instant forecast generation
 
 ### Color Scheme
 
@@ -282,6 +305,10 @@ The dashboard will open in your default web browser at `http://localhost:8501`.
 
 ### Using the Dashboard
 
+The dashboard has three main tabs:
+
+#### Tab 1: Main Dashboard
+
 1. **Power BI-Style Button Filters** (Top of Dashboard):
    - **Year Range**: Click year buttons to toggle selection (yellow = selected)
    - **Products**: Click product buttons to select (shows top 15 by default)
@@ -305,6 +332,56 @@ The dashboard will open in your default web browser at `http://localhost:8501`.
    - Both charts update dynamically based on filter selections
    - Hover over data points for detailed information
    - Dark background with yellow accents for Power BI aesthetic
+
+#### Tab 2: ARIMA Forecasting
+
+1. **Forecast Controls**:
+   - **Forecast Horizon**: Choose from 30 days, 90 days, 6 months, 1 year, 2 years, or custom
+   - **Custom Days**: Enter specific number of days (1-3650)
+   - **Historical Data**: Select how much historical context to display
+
+2. **Forecast Visualizations**:
+   - **Main Chart**: Historical revenue (yellow) + ARIMA forecast (teal) line chart
+   - **Monthly Aggregation**: Total forecasted revenue per month (bar chart)
+   - **Yearly Aggregation**: Total forecasted revenue per year (bar chart, 365+ days)
+
+3. **Forecast Statistics**:
+   - **Forecast Period**: Number of days projected
+   - **Total Forecasted Revenue**: Sum of all forecasted daily revenues
+   - **Avg Daily Revenue**: Mean daily revenue forecast
+   - **Std Deviation**: Forecast variability measure
+
+4. **Model Information**:
+   - ARIMA(0,0,0) model specifications
+   - Training period: 1970-2022 (19,006 daily observations)
+   - Performance metrics: AIC, BIC, RMSE, MAE
+
+#### Tab 3: LSTM Forecasting (NEW)
+
+1. **Forecast Controls**:
+   - **Forecast Horizon**: Same options as ARIMA (30 days to 2 years, or custom)
+   - **Historical Data Display**: Choose visualization context (3 months to all data)
+   - **Comparison Toggle**: Enable/disable ARIMA comparison overlay
+
+2. **LSTM Visualizations**:
+   - **Main Chart**: Historical (yellow) + LSTM forecast (pink) + optional ARIMA (teal)
+   - **Monthly Aggregation**: LSTM forecasted revenue per month
+   - **Yearly Aggregation**: LSTM forecasted revenue per year (365+ days)
+
+3. **Comparative Statistics** (when comparison enabled):
+   - **Total Revenue Difference**: LSTM vs ARIMA (absolute and percentage)
+   - **Avg Daily Difference**: Daily revenue variance between models
+   - **Variability Analysis**: Standard deviation comparison
+
+4. **Model Information**:
+   - LSTM neural network architecture
+   - 60-day look-back window
+   - Pattern recognition capabilities
+   - LSTM vs ARIMA comparison guide
+
+**For detailed forecasting documentation:**
+- ARIMA: See [FORECASTING_GUIDE.md](FORECASTING_GUIDE.md)
+- LSTM: See [LSTM_IMPLEMENTATION_SUMMARY.md](LSTM_IMPLEMENTATION_SUMMARY.md)
 
 ### Stopping the Application
 
